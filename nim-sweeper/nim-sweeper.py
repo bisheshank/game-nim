@@ -42,7 +42,7 @@
 #
 # from z3_utils_hakank import *
 from z3 import *
-
+import random
 
 #
 # Default problem from "Some Minesweeper Configurations",page 3
@@ -62,6 +62,36 @@ default_game = [
     [0, 1, X, 4, X, X, X, 3],
     [0, 1, 2, X, 2, 3, X, 2]
 ]
+
+
+def generate_board(r_cnt, c_cnt, adjacency_count):
+    # randomly generate a board of size r_cnt x c_cnt
+    # A number represents the number of mines around it.
+    # X (-1) represents an unknown on whether it is a mine or not.
+
+    # generate adjacency_count number of adjacencies
+    adjacencies = []
+    for i in range(adjacency_count):
+        # ensuring that no duplicates are generated
+        while True:
+            adjacency = (random.randint(0, r_cnt-1),
+                         random.randint(0, c_cnt-1))
+            adj_cnt = random.randint(1, 8)
+            if adjacency not in adjacencies:
+                adjacencies.append((adjacency, adj_cnt))
+                break
+
+    # generate the board
+    board = [[X for _ in range(r_cnt)] for _ in range(c_cnt)]
+
+    # add the adjacencies to the board
+    for adjacency in adjacencies:
+        row = adjacency[0][0]
+        col = adjacency[0][1]
+        adj_cnt = adjacency[1]
+        board[row][col] = adj_cnt
+
+    return board
 
 
 def main(game="", r="", c=""):
@@ -179,11 +209,5 @@ def print_game(game, rows, cols):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        file = sys.argv[1]
-        print("Problem instance from", file)
-        [game, rows, cols] = read_problem(file)
-        # print_game(game, rows, cols)
-        main(game, rows, cols)
-    else:
-        main()
+    board = generate_board(8, 8, 10)
+    print(board)
