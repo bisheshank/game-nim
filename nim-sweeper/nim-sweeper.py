@@ -64,32 +64,33 @@ default_game = [
 ]
 
 
-def generate_board(r_cnt, c_cnt, adjacency_count):
+def generate_board(r_cnt, c_cnt, mine_cnt):
     # randomly generate a board of size r_cnt x c_cnt
     # A number represents the number of mines around it.
     # X (-1) represents an unknown on whether it is a mine or not.
+    board = [[0 for _ in range(c_cnt)] for _ in range(r_cnt)]
+    mines = random.sample([(r, c) for r in range(r_cnt)
+                          for c in range(c_cnt)], mine_cnt)
+    print(mines)
 
-    # generate adjacency_count number of adjacencies
-    adjacencies = []
-    for i in range(adjacency_count):
-        # ensuring that no duplicates are generated
-        while True:
-            adjacency = (random.randint(0, r_cnt-1),
-                         random.randint(0, c_cnt-1))
-            adj_cnt = random.randint(1, 8)
-            if adjacency not in adjacencies:
-                adjacencies.append((adjacency, adj_cnt))
-                break
+    for row, col in mines:
+        board[row][col] = X
 
-    # generate the board
-    board = [[X for _ in range(r_cnt)] for _ in range(c_cnt)]
+    for row in range(r_cnt):
+        for col in range(c_cnt):
+            if board[row][col] == X:
+                continue
 
-    # add the adjacencies to the board
-    for adjacency in adjacencies:
-        row = adjacency[0][0]
-        col = adjacency[0][1]
-        adj_cnt = adjacency[1]
-        board[row][col] = adj_cnt
+            adjacents = [(row + r, col + c) for r in [-1, 0, 1]
+                         for c in [-1, 0, 1] if r != 0 or c != 0]
+            adj_mine_count = sum(1 for r, c in adjacents if 0 <=
+                                 r < r_cnt and 0 <= c < c_cnt and board[r][c] == X)
+            board[row][col] = adj_mine_count
+
+    for row in range(r_cnt):
+        for col in range(c_cnt):
+            if board[row][col] == 0:
+                board[row][col] = X
 
     return board
 
@@ -97,10 +98,6 @@ def generate_board(r_cnt, c_cnt, adjacency_count):
 def main(game="", r="", c=""):
 
     sol = SimpleSolver()
-
-    #
-    # data
-    #
 
     # Set default problem
     if game == "":
@@ -110,18 +107,7 @@ def main(game="", r="", c=""):
     else:
         print("rows:", r, " cols:", c)
 
-    S = [-1, 0, 1]  # for the neighbors of "this" cell
-
-    # print problem instance
-    print("Problem:")
-    for i in range(r):
-        for j in range(c):
-            if game[i][j] == X:
-                print("X", end=" ")
-            else:
-                print(game[i][j], end=" ")
-        print()
-    print()
+    print_board(game)
 
     # declare variables
     mines = {}
@@ -131,6 +117,7 @@ def main(game="", r="", c=""):
             sol.add(mines[(i, j)] >= 0, mines[(i, j)] <= 1)
 
     # constraints
+    adj = [-1, 0, 1]
     for i in range(r):
         for j in range(c):
             if game[i][j] >= 0:
@@ -138,7 +125,7 @@ def main(game="", r="", c=""):
                 # this cell is the sum of all the surrounding cells
                 sol.add(
                     game[i][j] == Sum([mines[i+a, j+b]
-                                       for a in S for b in S
+                                       for a in adj for b in adj
                                        if i + a >= 0 and
                                        j + b >= 0 and
                                        i + a < r and
@@ -172,28 +159,11 @@ def main(game="", r="", c=""):
 # Read a problem instance from a file
 #
 
-
-def read_problem(file):
-    f = open(file, "r")
-    rows = int(f.readline())
-    cols = int(f.readline())
-    game = []
-    for i in range(rows):
-        x = f.readline()
-        row = [0] * cols
-        for j in range(cols):
-            if x[j] == ".":
-                tmp = -1
-            else:
-                tmp = int(x[j])
-            row[j] = tmp
-        game.append(row)
-    return [game, rows, cols]
-
-
 #
 # Print the mines
 #
+
+
 def print_mines(mines, rows, cols):
     for i in range(rows):
         for j in range(cols):
@@ -201,13 +171,21 @@ def print_mines(mines, rows, cols):
         print()
 
 
-def print_game(game, rows, cols):
-    for i in range(rows):
-        for j in range(cols):
-            print(game[i][j], end=" ")
+def print_board(board):
+    r = len(board)
+    c = len(board[0])
+
+    print("BOARD:")
+    for i in range(r):
+        for j in range(c):
+            if board[i][j] == X:
+                print("X", end=" ")
+            else:
+                print(board[i][j], end=" ")
         print()
+    print()
 
 
 if __name__ == "__main__":
-    board = generate_board(8, 8, 10)
-    print(board)
+    board = generate_board(8, 8, 5)
+    print_board(board)
