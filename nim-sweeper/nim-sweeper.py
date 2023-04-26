@@ -1,9 +1,14 @@
 from z3 import *
 import random
 
+# PARAMS:
+ROWS, COLS = 10, 10
+MINE_CNT = 5
+BLANKS_HAVE_NO_NEW_INFO = True
+VERBOSE = True
+
 
 UNKNOWN = -1
-VERBOSE = True
 def generate_board(r_cnt, c_cnt, mine_cnt):
     # randomly generate a board of size r_cnt x c_cnt
     # A number represents the number of mines around it.
@@ -65,7 +70,7 @@ def main(game):
                 )
                 # cannot be a mine if it is a number
                 sol.add(mines[i, j] == 0)
-            else:
+            elif BLANKS_HAVE_NO_NEW_INFO:
               # If an unknown tile is not adjacent to a numbered tile, it must not contain a mine
               if all(game[i+a][j+b] == UNKNOWN 
                      for a in adj for b in adj 
@@ -121,9 +126,6 @@ def print_board(board):
         print()
     print()
 
-
-ROWS, COLS = 16, 16
-MINE_CNT = 20
 
 if __name__ == "__main__":
     
