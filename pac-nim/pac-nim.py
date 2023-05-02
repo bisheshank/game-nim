@@ -12,7 +12,6 @@ POWERUP = Tile("powerup", "o")
 EMPTY = Tile("empty", " ")
 WALL = Tile("wall", "#")
 GHOST = Tile("ghost", "G")
-CANDY = Tile("candy", "C")
 
 
 class Path:
