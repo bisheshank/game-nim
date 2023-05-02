@@ -1,10 +1,8 @@
-import visualize as vz
 import random
 from typing import List, Tuple, Dict
 from z3 import *
-import sys
-sys.path.insert(0, './visualization')
 
+# from visualization import visualize
 
 # ------------------ CONSTANTS -------------------- #
 ROWS: int = 10

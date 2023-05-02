@@ -89,11 +89,8 @@ def main():
         #             elif game[row][col] == -2:
         #                 game[row][col] = -1
 
-        draw_board(game, mines, completed)
+        # draw_board(game, mines, completed)
 
 
-if __name__ == "__main__":
-    main()
-
-# Quit pygame
+# Quit pygam
 pygame.quit()
