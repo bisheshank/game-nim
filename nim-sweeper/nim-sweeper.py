@@ -1,6 +1,10 @@
-from z3 import *
-from typing import List, Tuple, Dict
+import visualize as vz
 import random
+from typing import List, Tuple, Dict
+from z3 import *
+import sys
+sys.path.insert(0, './visualization')
+
 
 # ------------------ CONSTANTS -------------------- #
 ROWS: int = 10
@@ -86,6 +90,7 @@ def main(game: List[List[int]]) -> int:
                 # Cannot be a mine if it is a number
                 sol.add(mines[i, j] == 0)
             elif BLANKS_HAVE_NO_NEW_INFO:
+                # else:
                 # If an unknown tile is not adjacent to a numbered tile,
                 # it must not contain a mine
                 if all(game[i+a][j+b] == UNKNOWN
