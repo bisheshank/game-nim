@@ -1,61 +1,75 @@
 from z3 import *
+from typing import List, Tuple, Dict
 import random
 
-# PARAMS:
-ROWS, COLS = 10, 10
-MINE_CNT = 5
-BLANKS_HAVE_NO_NEW_INFO = True
-VERBOSE = True
+# ------------------ CONSTANTS -------------------- #
+ROWS: int = 10
+COLS: int = 10
+MINE_CNT: int = 5
+BLANKS_HAVE_NO_NEW_INFO: bool = True
+VERBOSE: bool = True
+UNKNOWN: int = -1
 
 
-UNKNOWN = -1
-def generate_board(r_cnt, c_cnt, mine_cnt):
-    # randomly generate a board of size r_cnt x c_cnt
+# -------------- GAME BOARD GENERATOR ---------------- #
+
+def generate_board(rows: int, cols: int, mine_cnt: int) -> List[List[int]]:
+    """
+    Generate a board of size rows x cols with mine_cnt mines randomly placed
+    """
+    # randomly generate a board of size rows x cols
     # A number represents the number of mines around it.
     # X (-1) represents an unknown on whether it is a mine or not.
-    board = [[0 for _ in range(c_cnt)] for _ in range(r_cnt)]
-    mines = random.sample([(r, c) for r in range(r_cnt)
-                          for c in range(c_cnt)], mine_cnt)
 
-    for row, col in mines:
+    # Initialize the board
+    board = [[0 for _ in range(cols)] for _ in range(rows)]
+
+    # Sample of indices for the mines
+    mine_indices = random.sample([(r, c) for r in range(rows)
+                                  for c in range(cols)], mine_cnt)
+
+    # Place the mines in the board
+    for row, col in mine_indices:
         board[row][col] = UNKNOWN
 
-    for row in range(r_cnt):
-        for col in range(c_cnt):
+    # Place the numbers according to the mines placed
+    for row in range(rows):
+        for col in range(cols):
             if board[row][col] == UNKNOWN:
                 continue
 
             adjacents = [(row + r, col + c) for r in [-1, 0, 1]
                          for c in [-1, 0, 1] if r != 0 or c != 0]
             adj_mine_count = sum(1 for r, c in adjacents if 0 <=
-                                 r < r_cnt and 0 <= c < c_cnt and board[r][c] == UNKNOWN)
+                                 r < rows and 0 <= c < cols and board[r][c] == UNKNOWN)
             board[row][col] = adj_mine_count
 
-    for row in range(r_cnt):
-        for col in range(c_cnt):
+    for row in range(rows):
+        for col in range(cols):
             if board[row][col] == 0:
                 board[row][col] = UNKNOWN
 
     return board
 
 
-def main(game):
+# ----------------- MINESWEEPER ------------------ #
 
-    sol = SimpleSolver()
+def main(game: List[List[int]]) -> int:
+    # Using the z3 solver
+    sol = Solver()
 
-    # Set default problem
-
+    # Set default values of rows and columns
     r = len(game)
     c = len(game[0])
 
-    # declare variables
+    # Declare variables
     mines = {}
     for i in range(r):
         for j in range(c):
             mines[(i, j)] = Int("mines %i %i" % (i, j))
             sol.add(mines[(i, j)] >= 0, mines[(i, j)] <= 1)
 
-    # constraints
+    # Constraints
     adj = [-1, 0, 1]
     for i in range(r):
         for j in range(c):
@@ -68,68 +82,74 @@ def main(game):
                                        i + a < r and
                                        j + b < c])
                 )
-                # cannot be a mine if it is a number
+                # Cannot be a mine if it is a number
                 sol.add(mines[i, j] == 0)
             elif BLANKS_HAVE_NO_NEW_INFO:
-              # If an unknown tile is not adjacent to a numbered tile, it must not contain a mine
-              if all(game[i+a][j+b] == UNKNOWN 
-                     for a in adj for b in adj 
-                     if i + a > UNKNOWN and 
-                     j + b > UNKNOWN and 
-                     i + a < r and 
-                     j + b < c):
-                  sol.add(mines[(i, j)] == 0)
-
+                # If an unknown tile is not adjacent to a numbered tile,
+                # it must not contain a mine
+                if all(game[i+a][j+b] == UNKNOWN
+                       for a in adj for b in adj
+                       if i + a > UNKNOWN and
+                       j + b > UNKNOWN and
+                       i + a < r and
+                       j + b < c):
+                    sol.add(mines[(i, j)] == 0)
 
     num_solutions = 0
     print("Solution(s):")
     while sol.check() == sat:
         num_solutions += 1
         mod = sol.model()
+        # Print the found solution
         if VERBOSE:
-          for i in range(r):
-              for j in range(c):
-                  print("◇", end=" ") if mod.eval(mines[(i,j)]) == 1 else print("■", end=" ")
-              print()
-          print()
-      
+            print_boards(board, mines, mod, True)
+
+        # Finding more solutions by excluding the current solution
         sol.add(Or([mines[i, j] != mod.eval(mines[i, j])
                 for i in range(r) for j in range(c)]))
     print("num_solutions:", num_solutions)
     return num_solutions
 
-def print_mines(mines, rows, cols):
+
+# ------------- BOARD PRINTING ---------------- #
+
+def print_boards(
+        game: List[List[int]],
+        mines: Dict[Tuple[int, int], int] = {},
+        mod: any = None,
+        completed: bool = False,
+        print_all: bool = True):
+    """
+    Prints a given game board with mines.
+
+    Args:
+    - game (List[List[int]]): the initial game board
+    - mines (Dict[Tuple[int, int], int]): a dictionary representing the solved minesweeper board, where the keys are
+    - mod (any : z3 class)
+    - completed (bool): true if the game is completed
+    - print-all (bool): true if all the numbers also are being completed
+    """
+    rows = len(game)
+    cols = len(game[0])
+
+    if not completed:
+        print("BOARD:")
     for i in range(rows):
         for j in range(cols):
-            print(mines[i, j], end=" ")
-        print()
-
-def print_solution(mines, rows, cols):
-    for i in range(rows):
-        for j in range(cols):
-            print(mines, end=" ")
-        print()
-    print()
-    
-
-def print_board(board):
-    r = len(board)
-    c = len(board[0])
-
-    print("BOARD:")
-    for i in range(r):
-        for j in range(c):
-            if board[i][j] == UNKNOWN:
-                print("■", end=" ")
+            if completed and mod.eval(mines[(i, j)]) == 1:
+                print("◇", end=" ")
             else:
-                print(board[i][j], end=" ")
+                if print_all:
+                    print("■", end=" ") if game[i][j] == UNKNOWN else print(
+                        game[i][j], end=" ")
+                else:
+                    print("■", end=" ")
         print()
     print()
 
 
 if __name__ == "__main__":
-    
-    board = generate_board(ROWS, COLS, mine_cnt=MINE_CNT)
 
-    print_board(board)
+    board = generate_board(ROWS, COLS, mine_cnt=MINE_CNT)
+    print_boards(board)
     num_sols = main(board)
