@@ -67,8 +67,7 @@ def main(game: List[List[int]]) -> int:
     mines = {}
     for i in range(r):
         for j in range(c):
-            mines[(i, j)] = Int("mines %i %i" % (i, j))
-            # mines[(i, j)] = Int("%i %i" % (i, j))
+            mines[(i, j)] = Int(f"mines_{i}{j}")
             sol.add(mines[(i, j)] >= 0, mines[(i, j)] <= 1)
 
     # Constraints
