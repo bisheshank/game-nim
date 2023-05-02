@@ -151,7 +151,7 @@ def print_boards(
         print()
     print()
 
-    # visualize.draw_board(game, mines, completed)
+    # visualize.visualize_board(game, mines)
 
 
 if __name__ == "__main__":
