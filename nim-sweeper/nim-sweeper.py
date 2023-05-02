@@ -151,6 +151,8 @@ def print_boards(
         print()
     print()
 
+    # visualize.draw_board(game, mines, completed)
+
 
 if __name__ == "__main__":
     board = generate_board(ROWS, COLS, mine_cnt=MINE_CNT)

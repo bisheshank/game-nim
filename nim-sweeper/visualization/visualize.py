@@ -21,9 +21,9 @@ screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
 pygame.display.set_caption("Minesweeper Visualizer")
 
 # Load images
-unknown_image = pygame.image.load("unknown.png").convert_alpha()
-mine_image = pygame.image.load("mine.png").convert_alpha()
-flag_image = pygame.image.load("flag.png").convert_alpha()
+unknown_image = pygame.image.load("visualization/unknown.png").convert_alpha()
+mine_image = pygame.image.load("visualization/mine.png").convert_alpha()
+flag_image = pygame.image.load("visualization/flag.png").convert_alpha()
 
 # Resize images to fit the cell size
 unknown_image = pygame.transform.scale(unknown_image, (CELL_SIZE, CELL_SIZE))
@@ -44,16 +44,16 @@ def draw_board(game, mines, completed):
             if completed and mines[(i, j)] == 1:
                 screen.blit(mine_image, (j*CELL_SIZE, i*CELL_SIZE))
             else:
-                if game[i][j] == -1:
-                    screen.blit(unknown_image, (j*CELL_SIZE, i*CELL_SIZE))
-                elif game[i][j] == -2:
-                    screen.blit(flag_image, (j*CELL_SIZE, i*CELL_SIZE))
-                else:
-                    font = pygame.font.Font(None, CELL_SIZE)
-                    text = font.render(str(game[i][j]), True, BLACK)
-                    text_rect = text.get_rect(
-                        center=(j*CELL_SIZE+CELL_SIZE/2, i*CELL_SIZE+CELL_SIZE/2))
-                    screen.blit(text, text_rect)
+                # if game[i][j] == -1:
+                screen.blit(unknown_image, (j*CELL_SIZE, i*CELL_SIZE))
+                # elif game[i][j] == -2:
+                # screen.blit(flag_image, (j*CELL_SIZE, i*CELL_SIZE))
+                # else:
+                # font = pygame.font.Font(None, CELL_SIZE)
+                # text = font.render(str(game[i][j]), True, BLACK)
+                # text_rect = text.get_rect(
+                # center=(j*CELL_SIZE+CELL_SIZE/2, i*CELL_SIZE+CELL_SIZE/2))
+                # screen.blit(text, text_rect)
 
     pygame.display.flip()
 
@@ -64,32 +64,32 @@ def main():
              for j in range(BOARD_WIDTH)}
     completed = False
 
-    draw_board(game, mines, completed)
+    # draw_board(game, mines, completed)
 
-    # Game loop
+#     # Game loop
     running = True
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
 
-        #     if event.type == pygame.MOUSEBUTTONUP:
-        #         pos = pygame.mouse.get_pos()
-        #         col = pos[0] // CELL_SIZE
-        #         row = pos[1] // CELL_SIZE
+#         #     if event.type == pygame.MOUSEBUTTONUP:
+#         #         pos = pygame.mouse.get_pos()
+#         #         col = pos[0] // CELL_SIZE
+#         #         row = pos[1] // CELL_SIZE
 
-        #         if event.button == 1:  # left-click
-        #             if game[row][col] == -1:
-        #                 game[row][col] = 0
-        #                 draw_board(game, mines, completed)
+#         #         if event.button == 1:  # left-click
+#         #             if game[row][col] == -1:
+#         #                 game[row][col] = 0
+#         #                 draw_board(game, mines, completed)
 
-        #         elif event.button == 3:  # right-click
-        #             if game[row][col] == -1:
-        #                 game[row][col] = -2
-        #             elif game[row][col] == -2:
-        #                 game[row][col] = -1
+#         #         elif event.button == 3:  # right-click
+#         #             if game[row][col] == -1:
+#         #                 game[row][col] = -2
+#         #             elif game[row][col] == -2:
+#         #                 game[row][col] = -1
 
-        # draw_board(game, mines, completed)
+            draw_board(game, mines, completed)
 
 
 # Quit pygam
