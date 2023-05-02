@@ -9,9 +9,10 @@ MINE_CNT: int = 5
 BLANKS_HAVE_NO_NEW_INFO: bool = True
 VERBOSE: bool = True
 UNKNOWN: int = -1
-
+PRINT_ALL: bool = False
 
 # -------------- GAME BOARD GENERATOR ---------------- #
+
 
 def generate_board(rows: int, cols: int, mine_cnt: int) -> List[List[int]]:
     """
@@ -66,7 +67,8 @@ def main(game: List[List[int]]) -> int:
     mines = {}
     for i in range(r):
         for j in range(c):
-            mines[(i, j)] = Int("mines %i %i" % (i, j))
+            # mines[(i, j)] = Int("mines %i %i" % (i, j))
+            mines[(i, j)] = Int("%i %i" % (i, j))
             sol.add(mines[(i, j)] >= 0, mines[(i, j)] <= 1)
 
     # Constraints
@@ -102,7 +104,7 @@ def main(game: List[List[int]]) -> int:
         mod = sol.model()
         # Print the found solution
         if VERBOSE:
-            print_boards(board, mines, mod, True)
+            print_boards(board, mines, mod, True, PRINT_ALL)
 
         # Finding more solutions by excluding the current solution
         sol.add(Or([mines[i, j] != mod.eval(mines[i, j])
@@ -149,7 +151,6 @@ def print_boards(
 
 
 if __name__ == "__main__":
-
     board = generate_board(ROWS, COLS, mine_cnt=MINE_CNT)
     print_boards(board)
     num_sols = main(board)
