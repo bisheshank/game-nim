@@ -58,6 +58,34 @@ def draw_board(game, mines, completed):
     pygame.display.flip()
 
 
+def explore_empty_cells(game, row, col):
+    if game[row][col] != 0:
+        return
+
+    game[row][col] = -3  # mark as explored
+
+    # explore adjacent cells
+    for i in range(max(0, row-1), min(BOARD_HEIGHT, row+2)):
+        for j in range(max(0, col-1), min(BOARD_WIDTH, col+2)):
+            if game[i][j] != -2 and game[i][j] != -3:  # not flagged or explored
+                explore_empty_cells(game, i, j)
+
+
+def handle_click(game, row, col):
+    rows = len(game)
+    cols = len(game[0])
+    if game[row][col] == -1:
+        explore_empty_cells(game, row, col)
+    elif game[row][col] == 0:
+        return
+    else:
+        adjacents = [(row + r, col + c) for r in [-1, 0, 1]
+                     for c in [-1, 0, 1] if r != 0 or c != 0]
+        adj_mine_count = sum(1 for r, c in adjacents if 0 <=
+                             r < rows and 0 <= c < cols and game[r][c] == -1)
+        game[row][col] = adj_mine_count
+
+
 def main():
     game = [[-1 for _ in range(BOARD_WIDTH)] for _ in range(BOARD_HEIGHT)]
     mines = {(i, j): 0 for i in range(BOARD_HEIGHT)
@@ -65,6 +93,18 @@ def main():
     completed = False
 
     draw_board(game, mines, completed)
+
+    # Create Reset button
+    reset_button = pygame.Surface((100, 50))
+    reset_button.fill(GRAY)
+    reset_button_rect = reset_button.get_rect(
+        bottomleft=(0, WINDOW_HEIGHT))
+
+    # Create Solve button
+    solve_button = pygame.Surface((100, 50))
+    solve_button.fill(GRAY)
+    solve_button_rect = solve_button.get_rect(
+        bottomright=(WINDOW_WIDTH, WINDOW_HEIGHT))
 
     # Game loop
     running = True
@@ -89,7 +129,34 @@ def main():
                     elif game[row][col] == -2:
                         game[row][col] = -1
 
+                # Check if Reset button was clicked
+                if reset_button_rect.collidepoint(pos):
+                    game = [[-1 for _ in range(BOARD_WIDTH)]
+                            for _ in range(BOARD_HEIGHT)]
+                    completed = False
+                    draw_board(game, mines, completed)
+
+                # Check if Solve button was clicked
+                if solve_button_rect.collidepoint(pos):
+                    # TODO: Implement board solver
+                    pass
+
         draw_board(game, mines, completed)
+
+        # Draw Reset button
+        screen.blit(reset_button, reset_button_rect)
+        font = pygame.font.Font(None, 25)
+        text = font.render("Reset", True, WHITE)
+        text_rect = text.get_rect(center=reset_button_rect.center)
+        screen.blit(text, text_rect)
+
+        # Draw Solve button
+        screen.blit(solve_button, solve_button_rect)
+        text = font.render("Solve", True, WHITE)
+        text_rect = text.get_rect(center=solve_button_rect.center)
+        screen.blit(text, text_rect)
+
+        pygame.display.flip()
 
 
 if __name__ == "__main__":
