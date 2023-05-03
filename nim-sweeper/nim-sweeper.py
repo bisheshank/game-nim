@@ -2,7 +2,6 @@ import random
 from typing import List, Tuple, Dict
 from z3 import *
 
-# from visualization import visualize
 
 # Properties to find
 # is it possible to solve from an intermediate state
@@ -156,8 +155,6 @@ def print_boards(
                     print("■", end=" ")
         print()
     print()
-
-    # visualize.visualize_board(game, mines)
 
 
 if __name__ == "__main__":
