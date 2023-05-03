@@ -87,6 +87,19 @@ class Visualize:
                             center=(j*self.CELL_SIZE+self.CELL_SIZE/2, i*self.CELL_SIZE+self.CELL_SIZE/2))
                         self.screen.blit(text, text_rect)
 
+        # Draw Reset button
+        self.screen.blit(self.reset_button, self.reset_button_rect)
+        font = pygame.font.Font(None, 25)
+        text = font.render("Reset", True, self.WHITE)
+        text_rect = text.get_rect(center=self.reset_button_rect.center)
+        self.screen.blit(text, text_rect)
+
+        # Draw Solve button
+        self.screen.blit(self.solve_button, self.solve_button_rect)
+        text = font.render("Solve", True, self.WHITE)
+        text_rect = text.get_rect(center=self.solve_button_rect.center)
+        self.screen.blit(text, text_rect)
+
         pygame.display.flip()
 
     def run(self):
@@ -146,19 +159,6 @@ class Visualize:
                             game[row][col] = -1
 
             self.draw_board(game, mines, completed)
-
-            # Draw Reset button
-            self.screen.blit(self.reset_button, self.reset_button_rect)
-            font = pygame.font.Font(None, 25)
-            text = font.render("Reset", True, self.WHITE)
-            text_rect = text.get_rect(center=self.reset_button_rect.center)
-            self.screen.blit(text, text_rect)
-
-            # Draw Solve button
-            self.screen.blit(self.solve_button, self.solve_button_rect)
-            text = font.render("Solve", True, self.WHITE)
-            text_rect = text.get_rect(center=self.solve_button_rect.center)
-            self.screen.blit(text, text_rect)
 
             pygame.display.flip()
 

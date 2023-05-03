@@ -161,5 +161,3 @@ if __name__ == "__main__":
     board = generate_board(ROWS, COLS, mine_cnt=MINE_CNT)
     print_boards(board)
     num_sols = main(board)
-
-# rewrite this code with classes instead
