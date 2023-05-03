@@ -4,6 +4,12 @@ from z3 import *
 
 # from visualization import visualize
 
+# Properties to find
+# is it possible to solve from an intermediate state
+# best possible move? to know more info or to find a mine
+# opening up?
+# solvability?
+
 # ------------------ CONSTANTS -------------------- #
 ROWS: int = 10
 COLS: int = 10
