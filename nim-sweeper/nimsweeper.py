@@ -12,7 +12,7 @@ from z3 import *
 # ------------------ CONSTANTS -------------------- #
 ROWS: int = 10
 COLS: int = 10
-MINE_CNT: int = 1
+MINE_CNT: int = 10
 CONSTRAIN_CORRECT_MINE_COUNT: bool = False
 BLANKS_HAVE_NO_NEW_INFO: bool = True
 VERBOSE: bool = True
@@ -22,7 +22,7 @@ KEEP_MINES_KNOWN: bool = False
 PRINT_ALL: bool = False
 
 LIMIT_SOL_SPACE: bool = True
-SOL_LIMIT: int = 100
+SOL_LIMIT: int = 1000
 
 # -------------- GAME BOARD GENERATOR ---------------- #
 
@@ -79,12 +79,32 @@ def likely_mines(solutions: List[List[List[int]]]) -> Tuple[List[Tuple[int, int]
                     mine_counts[(i, j)] = mine_counts.get((i, j), 0) + 1
     
     sorted_mines = sorted(mine_counts.items(), key=lambda x: -x[1])
+    if len(sorted_mines) == 0: return [], 1
     top_count = sorted_mines[0][1]
     # get all the mines that are most likely (same top count)
     most_likely_mines = [mine for mine, count in sorted_mines if count == top_count]
     percentage_likelihood = top_count / total_solutions
 
     return most_likely_mines, percentage_likelihood
+
+def likely_safe(solutions: List[List[List[int]]],
+                init_board: List[List[int]]) -> Tuple[List[Tuple[int, int]], float]:
+    safe_counts = {}
+    total_solutions = len(solutions)
+    for solution in solutions:
+        for i, row in enumerate(solution):
+            for j, cell in enumerate(row):
+                if cell != MINE and init_board[i][j] == UNKNOWN:
+                    safe_counts[(i, j)] = safe_counts.get((i, j), 0) + 1
+    
+    sorted_safe = sorted(safe_counts.items(), key=lambda x: -x[1])
+    if len(sorted_safe) == 0: return [], 1
+    top_count = sorted_safe[0][1]
+    # get all the mines that are most likely (same top count)
+    most_likely_safe = [safe for safe, count in sorted_safe if count == top_count]
+    percentage_likelihood = top_count / total_solutions
+
+    return most_likely_safe, percentage_likelihood
 
 
 def solve(game: List[List[int]], 
