@@ -16,10 +16,11 @@ MINE_CNT: int = 5
 BLANKS_HAVE_NO_NEW_INFO: bool = True
 VERBOSE: bool = True
 UNKNOWN: int = -1
+MINE: int = -2
+KEEP_MINES_KNOWN: bool = False
 PRINT_ALL: bool = False
 
 # -------------- GAME BOARD GENERATOR ---------------- #
-
 
 def generate_board(rows: int, cols: int, mine_cnt: int) -> List[List[int]]:
     """
@@ -38,23 +39,25 @@ def generate_board(rows: int, cols: int, mine_cnt: int) -> List[List[int]]:
 
     # Place the mines in the board
     for row, col in mine_indices:
-        board[row][col] = UNKNOWN
+        board[row][col] = MINE
 
     # Place the numbers according to the mines placed
     for row in range(rows):
         for col in range(cols):
-            if board[row][col] == UNKNOWN:
+            if board[row][col] == UNKNOWN or board[row][col] == MINE:
                 continue
 
             adjacents = [(row + r, col + c) for r in [-1, 0, 1]
                          for c in [-1, 0, 1] if r != 0 or c != 0]
             adj_mine_count = sum(1 for r, c in adjacents if 0 <=
-                                 r < rows and 0 <= c < cols and board[r][c] == UNKNOWN)
+                                 r < rows and 0 <= c < cols and board[r][c] == MINE)
             board[row][col] = adj_mine_count
 
     for row in range(rows):
         for col in range(cols):
             if board[row][col] == 0:
+                board[row][col] = UNKNOWN
+            if board[row][col] == MINE and not KEEP_MINES_KNOWN:
                 board[row][col] = UNKNOWN
 
     return board
@@ -81,6 +84,8 @@ def main(game: List[List[int]]) -> int:
     adj = [-1, 0, 1]
     for i in range(r):
         for j in range(c):
+            if game[i][j] == MINE:
+              sol.add(mines[(i, j)] == 1)
             if game[i][j] > UNKNOWN:
                 sol.add(
                     game[i][j] == Sum([mines[i+a, j+b]
@@ -105,24 +110,46 @@ def main(game: List[List[int]]) -> int:
                     sol.add(mines[(i, j)] == 0)
 
     num_solutions = 0
-    print("Solution(s):")
+    solutions = []
     while sol.check() == sat:
         num_solutions += 1
         mod = sol.model()
-        # Print the found solution
-        if VERBOSE:
-            print_boards(board, mines, mod, True, PRINT_ALL)
+        solutions.append(solution_board(board, mines, mod))
 
         # Finding more solutions by excluding the current solution
         sol.add(Or([mines[i, j] != mod.eval(mines[i, j])
                 for i in range(r) for j in range(c)]))
     print("num_solutions:", num_solutions)
-    return num_solutions
+    return num_solutions, solutions
 
 
 # ------------- BOARD PRINTING ---------------- #
 
-def print_boards(
+def solution_board(game, mines, mod):
+    """
+    Returns a solved board given the game board and the mines
+    """
+    rows = len(game)
+    cols = len(game[0])
+    board = [[0 for _ in range(cols)] for _ in range(rows)]
+    for i in range(rows):
+        for j in range(cols):
+            if mod.eval(mines[(i, j)]) == 1:
+                board[i][j] = MINE
+            else:
+                board[i][j] = game[i][j]
+    return board
+
+
+def print_boards(boards: List[List[List[int]]]):
+    """
+    Prints a list of boards
+    """
+    print("BOARD:")
+    for board in boards:
+        print_board(board, completed=True)
+
+def print_board(
         game: List[List[int]],
         mines: Dict[Tuple[int, int], int] = {},
         mod: any = None,
@@ -145,7 +172,7 @@ def print_boards(
         print("BOARD:")
     for i in range(rows):
         for j in range(cols):
-            if completed and mod.eval(mines[(i, j)]) == 1:
+            if completed and mod and mod.eval(mines[(i, j)]) == 1 or game[i][j] == MINE:
                 print("◇", end=" ")
             else:
                 if print_all:
@@ -159,5 +186,9 @@ def print_boards(
 
 if __name__ == "__main__":
     board = generate_board(ROWS, COLS, mine_cnt=MINE_CNT)
-    print_boards(board)
-    num_sols = main(board)
+    print_board(board)
+    num_sols, sols = main(board)
+
+    if VERBOSE:
+        print("Solution(s):")
+        print_boards(sols)

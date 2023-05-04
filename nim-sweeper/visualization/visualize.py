@@ -7,6 +7,16 @@ CELL_SIZE = 50
 BOARD_WIDTH = 10
 BOARD_HEIGHT = 10
 
+NUMBER_COLORS = {
+    1: (0, 0, 255), #blue
+    2: (0, 255, 0), #green
+    3: (255, 0, 0), #red
+    4: (0, 0, 128), #dark blue
+    5: (165, 42, 42), #brown
+    6: (0, 255, 255), #cyan
+    7: (0, 0, 0),   #black
+    8: (60, 60, 60) #grey
+}
 
 class Visualize:
     def __init__(self, game, mines, completed):
@@ -80,9 +90,11 @@ class Visualize:
                     elif game[i][j] == -2:
                         self.screen.blit(
                             self.flag_image, (j*self.CELL_SIZE, i*self.CELL_SIZE))
+                    elif game[i][j] == 0:
+                        pass
                     else:
                         font = pygame.font.Font(None, self.CELL_SIZE)
-                        text = font.render(str(game[i][j]), True, self.BLACK)
+                        text = font.render(str(game[i][j]), True, NUMBER_COLORS[game[i][j]])
                         text_rect = text.get_rect(
                             center=(j*self.CELL_SIZE+self.CELL_SIZE/2, i*self.CELL_SIZE+self.CELL_SIZE/2))
                         self.screen.blit(text, text_rect)
@@ -141,16 +153,15 @@ class Visualize:
                             mines = {(i, j): 0 for i in range(BOARD_HEIGHT)
                                      for j in range(BOARD_WIDTH)}
                             completed = False
-                            self.draw_board(game, mines, completed)
 
                         # Check if Solve button was clicked
                         elif self.solve_button_rect.collidepoint(pos):
                             # TODO: Implement board solver
                             pass
 
-                        elif game[row][col] == -1:
-                            game[row][col] = 0
-                            self.draw_board(game, mines, completed)
+                        elif row < BOARD_HEIGHT and col < BOARD_WIDTH:
+                            # alternate from values -1 to 8
+                            game[row][col] = ((game[row][col] + 2) % 10) - 1
 
                     elif event.button == 3:  # right-click
                         if game[row][col] == -1:
