@@ -1,4 +1,5 @@
 import pygame
+import nimsweeper as ns
 
 # Define dimensions
 WINDOW_WIDTH = 600
@@ -156,8 +157,9 @@ class Visualize:
 
                         # Check if Solve button was clicked
                         elif self.solve_button_rect.collidepoint(pos):
-                            # TODO: Implement board solver
-                            pass
+                            num_sols, sols = ns.solve(game, blanks_no_adj=False, constrain_mines=True)
+                            ns.print_boards(sols)
+                            
 
                         elif row < BOARD_HEIGHT and col < BOARD_WIDTH:
                             # alternate from values -1 to 8

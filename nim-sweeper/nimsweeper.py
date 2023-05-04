@@ -21,6 +21,8 @@ MINE: int = -2
 KEEP_MINES_KNOWN: bool = False
 PRINT_ALL: bool = False
 
+SOL_LIMIT: int = 100
+
 # -------------- GAME BOARD GENERATOR ---------------- #
 
 def generate_board(rows: int, cols: int, mine_cnt: int) -> List[List[int]]:
@@ -66,7 +68,8 @@ def generate_board(rows: int, cols: int, mine_cnt: int) -> List[List[int]]:
 
 # ----------------- MINESWEEPER ------------------ #
 
-def main(game: List[List[int]], mine_cnt: int,
+def solve(game: List[List[int]], 
+         mine_cnt: int = MINE_CNT,
          blanks_no_adj: bool = BLANKS_HAVE_NO_NEW_INFO,
          constrain_mines: bool = CONSTRAIN_CORRECT_MINE_COUNT,
          ) -> int:
@@ -118,15 +121,15 @@ def main(game: List[List[int]], mine_cnt: int,
 
     num_solutions = 0
     solutions = []
-    while sol.check() == sat:
+    while sol.check() == sat and num_solutions <= SOL_LIMIT:
         num_solutions += 1
         mod = sol.model()
-        solutions.append(solution_board(board, mines, mod))
+        solutions.append(solution_board(game, mines, mod))
 
         # Finding more solutions by excluding the current solution
         sol.add(Or([mines[i, j] != mod.eval(mines[i, j])
                 for i in range(r) for j in range(c)]))
-    print("num_solutions:", num_solutions)
+    print("num_solutions:", num_solutions) if num_solutions < 100 else print("num_solutions: 100+")
     return num_solutions, solutions
 
 
@@ -194,7 +197,7 @@ def print_board(
 if __name__ == "__main__":
     board = generate_board(ROWS, COLS, mine_cnt=MINE_CNT)
     print_board(board)
-    num_sols, sols = main(board, mine_cnt=MINE_CNT)
+    num_sols, sols = solve(board, mine_cnt=MINE_CNT)
 
     if VERBOSE:
         print("Solution(s):")
