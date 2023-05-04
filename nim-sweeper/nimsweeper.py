@@ -12,7 +12,7 @@ from z3 import *
 # ------------------ CONSTANTS -------------------- #
 ROWS: int = 10
 COLS: int = 10
-MINE_CNT: int = 5
+MINE_CNT: int = 1
 CONSTRAIN_CORRECT_MINE_COUNT: bool = False
 BLANKS_HAVE_NO_NEW_INFO: bool = True
 VERBOSE: bool = True
@@ -21,6 +21,7 @@ MINE: int = -2
 KEEP_MINES_KNOWN: bool = False
 PRINT_ALL: bool = False
 
+LIMIT_SOL_SPACE: bool = True
 SOL_LIMIT: int = 100
 
 # -------------- GAME BOARD GENERATOR ---------------- #
@@ -68,10 +69,29 @@ def generate_board(rows: int, cols: int, mine_cnt: int) -> List[List[int]]:
 
 # ----------------- MINESWEEPER ------------------ #
 
+def likely_mines(solutions: List[List[List[int]]]) -> Tuple[List[Tuple[int, int]], float]:
+    mine_counts = {}
+    total_solutions = len(solutions)
+    for solution in solutions:
+        for i, row in enumerate(solution):
+            for j, cell in enumerate(row):
+                if cell == MINE:
+                    mine_counts[(i, j)] = mine_counts.get((i, j), 0) + 1
+    
+    sorted_mines = sorted(mine_counts.items(), key=lambda x: -x[1])
+    top_count = sorted_mines[0][1]
+    # get all the mines that are most likely (same top count)
+    most_likely_mines = [mine for mine, count in sorted_mines if count == top_count]
+    percentage_likelihood = top_count / total_solutions
+
+    return most_likely_mines, percentage_likelihood
+
+
 def solve(game: List[List[int]], 
          mine_cnt: int = MINE_CNT,
          blanks_no_adj: bool = BLANKS_HAVE_NO_NEW_INFO,
          constrain_mines: bool = CONSTRAIN_CORRECT_MINE_COUNT,
+         limit_sols: bool = LIMIT_SOL_SPACE
          ) -> int:
     # Using the z3 solver
     sol = Solver()
@@ -121,7 +141,7 @@ def solve(game: List[List[int]],
 
     num_solutions = 0
     solutions = []
-    while sol.check() == sat and num_solutions <= SOL_LIMIT:
+    while sol.check() == sat and (num_solutions <= SOL_LIMIT or not limit_sols):
         num_solutions += 1
         mod = sol.model()
         solutions.append(solution_board(game, mines, mod))

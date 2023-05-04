@@ -2,8 +2,8 @@ import pygame
 import nimsweeper as ns
 
 # Define dimensions
-WINDOW_WIDTH = 600
-WINDOW_HEIGHT = 600
+WINDOW_WIDTH = 500
+WINDOW_HEIGHT = 550
 CELL_SIZE = 50
 BOARD_WIDTH = 10
 BOARD_HEIGHT = 10
@@ -18,6 +18,10 @@ NUMBER_COLORS = {
     7: (0, 0, 0),   #black
     8: (60, 60, 60) #grey
 }
+
+SAFE = -3
+DEADLY = -4
+CONFIRMED_FLAG = -5
 
 class Visualize:
     def __init__(self, game, mines, completed):
@@ -50,6 +54,9 @@ class Visualize:
         self.unknown_image = pygame.image.load("unknown.png").convert_alpha()
         self.mine_image = pygame.image.load("mine.png").convert_alpha()
         self.flag_image = pygame.image.load("flag.png").convert_alpha()
+        self.safe_image = pygame.image.load("safe.png").convert_alpha()
+        self.deadly_image = pygame.image.load("deadly.png").convert_alpha()
+        self.flag_confirm_image = pygame.image.load("flag_confirmed.png").convert_alpha()
 
         # Resize images to fit the cell size
         self.unknown_image = pygame.transform.scale(
@@ -58,6 +65,14 @@ class Visualize:
             self.mine_image, (self.CELL_SIZE, self.CELL_SIZE))
         self.flag_image = pygame.transform.scale(
             self.flag_image, (self.CELL_SIZE, self.CELL_SIZE))
+        self.safe_image = pygame.transform.scale(
+            self.safe_image, (self.CELL_SIZE, self.CELL_SIZE))
+        self.deadly_image = pygame.transform.scale(
+            self.deadly_image, (self.CELL_SIZE, self.CELL_SIZE))
+        self.flag_confirm_image = pygame.transform.scale(
+            self.flag_confirm_image, (self.CELL_SIZE, self.CELL_SIZE))
+        
+        
 
         # Create Reset button
         self.reset_button = pygame.Surface((100, 50))
@@ -91,6 +106,15 @@ class Visualize:
                     elif game[i][j] == -2:
                         self.screen.blit(
                             self.flag_image, (j*self.CELL_SIZE, i*self.CELL_SIZE))
+                    elif game[i][j] == SAFE:
+                        self.screen.blit(
+                            self.safe_image, (j*self.CELL_SIZE, i*self.CELL_SIZE))
+                    elif game[i][j] == DEADLY:
+                        self.screen.blit(
+                            self.deadly_image, (j*self.CELL_SIZE, i*self.CELL_SIZE))
+                    elif game[i][j] == CONFIRMED_FLAG:
+                        self.screen.blit(
+                            self.flag_confirm_image, (j*self.CELL_SIZE, i*self.CELL_SIZE))
                     elif game[i][j] == 0:
                         pass
                     else:
@@ -114,6 +138,15 @@ class Visualize:
         self.screen.blit(text, text_rect)
 
         pygame.display.flip()
+
+    def place_likely(self, likely_mines, likely_safe):
+        for i,j in likely_mines:
+            self.game[i][j] = DEADLY if self.game[i][j] != -2 and self.game[i][j] != CONFIRMED_FLAG else CONFIRMED_FLAG
+
+        for i,j in likely_safe:
+            self.game[i][j] = SAFE
+
+        # self.draw_board(self.game, self.mines, self.completed)
 
     def run(self):
         game = self.game
@@ -157,15 +190,25 @@ class Visualize:
 
                         # Check if Solve button was clicked
                         elif self.solve_button_rect.collidepoint(pos):
-                            num_sols, sols = ns.solve(game, blanks_no_adj=False, constrain_mines=True)
+                            num_sols, sols = ns.solve(game, 
+                                                      blanks_no_adj=False, 
+                                                      constrain_mines=True,
+                                                      limit_sols=True)
                             ns.print_boards(sols)
+                            likely_mines, mine_pct = ns.likely_mines(sols)
+                            print(likely_mines, mine_pct)
+                            self.place_likely(likely_mines, [])
                             
 
                         elif row < BOARD_HEIGHT and col < BOARD_WIDTH:
+                            if game[row][col] == SAFE or game[row][col] == DEADLY or game[row][col] == CONFIRMED_FLAG:
+                                game[row][col] = -1
                             # alternate from values -1 to 8
                             game[row][col] = ((game[row][col] + 2) % 10) - 1
 
                     elif event.button == 3:  # right-click
+                        if game[row][col] == SAFE or game[row][col] == DEADLY or game[row][col] == CONFIRMED_FLAG:
+                            game[row][col] = -1
                         if game[row][col] == -1:
                             game[row][col] = -2
                         elif game[row][col] == -2:
