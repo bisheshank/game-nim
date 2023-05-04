@@ -13,6 +13,7 @@ from z3 import *
 ROWS: int = 10
 COLS: int = 10
 MINE_CNT: int = 5
+CONSTRAIN_CORRECT_MINE_COUNT: bool = False
 BLANKS_HAVE_NO_NEW_INFO: bool = True
 VERBOSE: bool = True
 UNKNOWN: int = -1
@@ -65,7 +66,10 @@ def generate_board(rows: int, cols: int, mine_cnt: int) -> List[List[int]]:
 
 # ----------------- MINESWEEPER ------------------ #
 
-def main(game: List[List[int]]) -> int:
+def main(game: List[List[int]], mine_cnt: int,
+         blanks_no_adj: bool = BLANKS_HAVE_NO_NEW_INFO,
+         constrain_mines: bool = CONSTRAIN_CORRECT_MINE_COUNT,
+         ) -> int:
     # Using the z3 solver
     sol = Solver()
 
@@ -97,7 +101,7 @@ def main(game: List[List[int]]) -> int:
                 )
                 # Cannot be a mine if it is a number
                 sol.add(mines[i, j] == 0)
-            elif BLANKS_HAVE_NO_NEW_INFO:
+            elif blanks_no_adj:
                 # else:
                 # If an unknown tile is not adjacent to a numbered tile,
                 # it must not contain a mine
@@ -108,6 +112,9 @@ def main(game: List[List[int]]) -> int:
                        i + a < r and
                        j + b < c):
                     sol.add(mines[(i, j)] == 0)
+
+    if constrain_mines: # Constrain the number of mines to match the game
+        sol.add(Sum([mines[i, j] for i in range(r) for j in range(c)]) == mine_cnt)
 
     num_solutions = 0
     solutions = []
@@ -187,7 +194,7 @@ def print_board(
 if __name__ == "__main__":
     board = generate_board(ROWS, COLS, mine_cnt=MINE_CNT)
     print_board(board)
-    num_sols, sols = main(board)
+    num_sols, sols = main(board, mine_cnt=MINE_CNT)
 
     if VERBOSE:
         print("Solution(s):")
