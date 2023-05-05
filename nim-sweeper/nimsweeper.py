@@ -26,6 +26,7 @@ SOL_LIMIT: int = 1000
 
 # -------------- GAME BOARD GENERATOR ---------------- #
 
+
 def generate_board(rows: int, cols: int, mine_cnt: int) -> List[List[int]]:
     """
     Generate a board of size rows x cols with mine_cnt mines randomly placed
@@ -77,15 +78,18 @@ def likely_mines(solutions: List[List[List[int]]]) -> Tuple[List[Tuple[int, int]
             for j, cell in enumerate(row):
                 if cell == MINE:
                     mine_counts[(i, j)] = mine_counts.get((i, j), 0) + 1
-    
+
     sorted_mines = sorted(mine_counts.items(), key=lambda x: -x[1])
-    if len(sorted_mines) == 0: return [], 1
+    if len(sorted_mines) == 0:
+        return [], 1
     top_count = sorted_mines[0][1]
     # get all the mines that are most likely (same top count)
-    most_likely_mines = [mine for mine, count in sorted_mines if count == top_count]
+    most_likely_mines = [mine for mine,
+                         count in sorted_mines if count == top_count]
     percentage_likelihood = top_count / total_solutions
 
     return most_likely_mines, percentage_likelihood
+
 
 def likely_safe(solutions: List[List[List[int]]],
                 init_board: List[List[int]]) -> Tuple[List[Tuple[int, int]], float]:
@@ -96,23 +100,25 @@ def likely_safe(solutions: List[List[List[int]]],
             for j, cell in enumerate(row):
                 if cell != MINE and init_board[i][j] == UNKNOWN:
                     safe_counts[(i, j)] = safe_counts.get((i, j), 0) + 1
-    
+
     sorted_safe = sorted(safe_counts.items(), key=lambda x: -x[1])
-    if len(sorted_safe) == 0: return [], 1
+    if len(sorted_safe) == 0:
+        return [], 1
     top_count = sorted_safe[0][1]
     # get all the mines that are most likely (same top count)
-    most_likely_safe = [safe for safe, count in sorted_safe if count == top_count]
+    most_likely_safe = [safe for safe,
+                        count in sorted_safe if count == top_count]
     percentage_likelihood = top_count / total_solutions
 
     return most_likely_safe, percentage_likelihood
 
 
-def solve(game: List[List[int]], 
-         mine_cnt: int = MINE_CNT,
-         blanks_no_adj: bool = BLANKS_HAVE_NO_NEW_INFO,
-         constrain_mines: bool = CONSTRAIN_CORRECT_MINE_COUNT,
-         limit_sols: bool = LIMIT_SOL_SPACE
-         ) -> int:
+def solve(game: List[List[int]],
+          mine_cnt: int = MINE_CNT,
+          blanks_no_adj: bool = BLANKS_HAVE_NO_NEW_INFO,
+          constrain_mines: bool = CONSTRAIN_CORRECT_MINE_COUNT,
+          limit_sols: bool = LIMIT_SOL_SPACE
+          ) -> int:
     # Using the z3 solver
     sol = Solver()
 
@@ -132,7 +138,7 @@ def solve(game: List[List[int]],
     for i in range(r):
         for j in range(c):
             if game[i][j] == MINE:
-              sol.add(mines[(i, j)] == 1)
+                sol.add(mines[(i, j)] == 1)
             if game[i][j] > UNKNOWN:
                 sol.add(
                     game[i][j] == Sum([mines[i+a, j+b]
@@ -156,8 +162,9 @@ def solve(game: List[List[int]],
                        j + b < c):
                     sol.add(mines[(i, j)] == 0)
 
-    if constrain_mines: # Constrain the number of mines to match the game
-        sol.add(Sum([mines[i, j] for i in range(r) for j in range(c)]) == mine_cnt)
+    if constrain_mines:  # Constrain the number of mines to match the game
+        sol.add(Sum([mines[i, j] for i in range(r)
+                for j in range(c)]) == mine_cnt)
 
     num_solutions = 0
     solutions = []
@@ -169,7 +176,8 @@ def solve(game: List[List[int]],
         # Finding more solutions by excluding the current solution
         sol.add(Or([mines[i, j] != mod.eval(mines[i, j])
                 for i in range(r) for j in range(c)]))
-    print("num_solutions:", num_solutions) if num_solutions < 100 else print("num_solutions: 100+")
+    print("num_solutions:", num_solutions) if num_solutions < 100 else print(
+        "num_solutions: 100+")
     return num_solutions, solutions
 
 
@@ -198,6 +206,7 @@ def print_boards(boards: List[List[List[int]]]):
     print("BOARD:")
     for board in boards:
         print_board(board, completed=True)
+
 
 def print_board(
         game: List[List[int]],

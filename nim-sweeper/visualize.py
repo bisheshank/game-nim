@@ -9,19 +9,20 @@ BOARD_WIDTH = 10
 BOARD_HEIGHT = 10
 
 NUMBER_COLORS = {
-    1: (0, 0, 255), #blue
-    2: (0, 255, 0), #green
-    3: (255, 0, 0), #red
-    4: (0, 0, 128), #dark blue
-    5: (165, 42, 42), #brown
-    6: (0, 255, 255), #cyan
-    7: (0, 0, 0),   #black
-    8: (60, 60, 60) #grey
+    1: (0, 0, 255),  # blue
+    2: (0, 255, 0),  # green
+    3: (255, 0, 0),  # red
+    4: (0, 0, 128),  # dark blue
+    5: (165, 42, 42),  # brown
+    6: (0, 255, 255),  # cyan
+    7: (0, 0, 0),  # black
+    8: (60, 60, 60)  # grey
 }
 
 SAFE = -3
 DEADLY = -4
 CONFIRMED_FLAG = -5
+
 
 class Visualize:
     def __init__(self, game, mines, completed):
@@ -56,7 +57,8 @@ class Visualize:
         self.flag_image = pygame.image.load("flag.png").convert_alpha()
         self.safe_image = pygame.image.load("safe.png").convert_alpha()
         self.deadly_image = pygame.image.load("deadly.png").convert_alpha()
-        self.flag_confirm_image = pygame.image.load("flag_confirmed.png").convert_alpha()
+        self.flag_confirm_image = pygame.image.load(
+            "flag_confirmed.png").convert_alpha()
 
         # Resize images to fit the cell size
         self.unknown_image = pygame.transform.scale(
@@ -71,8 +73,6 @@ class Visualize:
             self.deadly_image, (self.CELL_SIZE, self.CELL_SIZE))
         self.flag_confirm_image = pygame.transform.scale(
             self.flag_confirm_image, (self.CELL_SIZE, self.CELL_SIZE))
-        
-        
 
         # Create Reset button
         self.reset_button = pygame.Surface((100, 50))
@@ -85,7 +85,7 @@ class Visualize:
         self.solve_button.fill(self.GRAY)
         self.solve_button_rect = self.solve_button.get_rect(
             bottomright=(self.WINDOW_WIDTH, self.WINDOW_HEIGHT))
-        
+
         self.cur_safe_pct, self.cur_mine_pct = 0, 0
 
     def draw_board(self, game, mines, completed):
@@ -103,7 +103,7 @@ class Visualize:
                     self.screen.blit(
                         self.mine_image, (j*self.CELL_SIZE, i*self.CELL_SIZE))
                 else:
-                    
+
                     if game[i][j] == -1:
                         self.screen.blit(self.unknown_image,
                                          (j*self.CELL_SIZE, i*self.CELL_SIZE))
@@ -113,38 +113,41 @@ class Visualize:
                     elif game[i][j] == SAFE:
                         self.screen.blit(
                             self.safe_image, (j*self.CELL_SIZE, i*self.CELL_SIZE))
-                        #TODO: add text for percent likelihood of being safe (cur_safe_pct if nonzero)
+                        # TODO: add text for percent likelihood of being safe (cur_safe_pct if nonzero)
                         if self.cur_safe_pct > 0:
-                          color = (0, 0, 0)
-                          if self.cur_safe_pct == 100:
-                              self.cur_mine_pct = 99 # due to non-full sampling, can't be 100% safe
-                              color = (255, 0, 0)
-                          text_surface = pct_font.render("{:.0f}%".format(self.cur_safe_pct), True, color)
-                          text_rect = text_surface.get_rect(center=(
-                              j*self.CELL_SIZE+self.CELL_SIZE//2, i*self.CELL_SIZE+int(self.CELL_SIZE*3/4)))
-                          self.screen.blit(text_surface, text_rect)
+                            color = (0, 0, 0)
+                            if self.cur_safe_pct == 100:
+                                self.cur_mine_pct = 99  # due to non-full sampling, can't be 100% safe
+                                color = (255, 0, 0)
+                            text_surface = pct_font.render(
+                                "{:.0f}%".format(self.cur_safe_pct), True, color)
+                            text_rect = text_surface.get_rect(center=(
+                                j*self.CELL_SIZE+self.CELL_SIZE//2, i*self.CELL_SIZE+int(self.CELL_SIZE*3/4)))
+                            self.screen.blit(text_surface, text_rect)
                     elif game[i][j] == DEADLY:
                         self.screen.blit(
                             self.deadly_image, (j*self.CELL_SIZE, i*self.CELL_SIZE))
-                        #TODO: add text for percent likelihood of being a mine (cur_mine_pct if nonzero)
+                        # TODO: add text for percent likelihood of being a mine (cur_mine_pct if nonzero)
                         if self.cur_mine_pct > 0:
-                          color = (0, 0, 0)
-                          if self.cur_mine_pct == 100:
-                              self.cur_mine_pct = 99 # due to non-full sampling, can't be 100% safe
-                              color = (255, 0, 0)
-                          text_surface = pct_font.render("{:.0f}%".format(self.cur_mine_pct), True, color)
-                          text_rect = text_surface.get_rect(center=(
-                              j*self.CELL_SIZE+self.CELL_SIZE//2, i*self.CELL_SIZE+int(self.CELL_SIZE*3/4)))
-                          self.screen.blit(text_surface, text_rect)
+                            color = (0, 0, 0)
+                            if self.cur_mine_pct == 100:
+                                self.cur_mine_pct = 99  # due to non-full sampling, can't be 100% safe
+                                color = (255, 0, 0)
+                            text_surface = pct_font.render(
+                                "{:.0f}%".format(self.cur_mine_pct), True, color)
+                            text_rect = text_surface.get_rect(center=(
+                                j*self.CELL_SIZE+self.CELL_SIZE//2, i*self.CELL_SIZE+int(self.CELL_SIZE*3/4)))
+                            self.screen.blit(text_surface, text_rect)
                     elif game[i][j] == CONFIRMED_FLAG:
                         self.screen.blit(
                             self.flag_confirm_image, (j*self.CELL_SIZE, i*self.CELL_SIZE))
-                        
+
                     elif game[i][j] == 0:
                         pass
                     else:
                         font = pygame.font.Font(None, self.CELL_SIZE)
-                        text = font.render(str(game[i][j]), True, NUMBER_COLORS[game[i][j]])
+                        text = font.render(
+                            str(game[i][j]), True, NUMBER_COLORS[game[i][j]])
                         text_rect = text.get_rect(
                             center=(j*self.CELL_SIZE+self.CELL_SIZE/2, i*self.CELL_SIZE+self.CELL_SIZE/2))
                         self.screen.blit(text, text_rect)
@@ -163,13 +166,13 @@ class Visualize:
         self.screen.blit(text, text_rect)
 
         pygame.display.flip()
-        
 
     def place_likely(self, likely_mines, likely_safe):
-        for i,j in likely_mines:
-            self.game[i][j] = DEADLY if self.game[i][j] != -2 and self.game[i][j] != CONFIRMED_FLAG else CONFIRMED_FLAG
+        for i, j in likely_mines:
+            self.game[i][j] = DEADLY if self.game[i][j] != - \
+                2 and self.game[i][j] != CONFIRMED_FLAG else CONFIRMED_FLAG
 
-        for i,j in likely_safe:
+        for i, j in likely_safe:
             self.game[i][j] = SAFE
 
         # self.draw_board(self.game, self.mines, self.completed)
@@ -216,19 +219,18 @@ class Visualize:
 
                         # Check if Solve button was clicked
                         elif self.solve_button_rect.collidepoint(pos):
-                            num_sols, sols = ns.solve(game, 
-                                                      blanks_no_adj=False, 
+                            num_sols, sols = ns.solve(game,
+                                                      blanks_no_adj=False,
                                                       constrain_mines=True,
                                                       limit_sols=True)
                             ns.print_boards(sols)
                             likely_mines, mine_pct = ns.likely_mines(sols)
-                            likely_safe, safe_pct = ns.likely_safe(sols,game)
+                            likely_safe, safe_pct = ns.likely_safe(sols, game)
                             # print(likely_mines, mine_pct)
                             # print(likely_safe, safe_pct)
                             print("num_solutions", num_sols)
                             self.cur_safe_pct, self.cur_mine_pct = safe_pct*100, mine_pct*100
                             self.place_likely(likely_mines, likely_safe)
-                            
 
                         elif row < BOARD_HEIGHT and col < BOARD_WIDTH:
                             if game[row][col] == SAFE or game[row][col] == DEADLY or game[row][col] == CONFIRMED_FLAG:
