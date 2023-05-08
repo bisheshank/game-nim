@@ -31,6 +31,8 @@ class Visualize:
         self.game = game
         self.mines = mines
         self.completed = completed
+        self.running = True
+        self.switch = True  # True for game-design mode
 
         self.WINDOW_WIDTH = WINDOW_WIDTH
         self.WINDOW_HEIGHT = WINDOW_HEIGHT
@@ -74,18 +76,7 @@ class Visualize:
         self.flag_confirm_image = pygame.transform.scale(
             self.flag_confirm_image, (self.CELL_SIZE, self.CELL_SIZE))
 
-        # Create Reset button
-        self.reset_button = pygame.Surface((100, 50))
-        self.reset_button.fill(self.GRAY)
-        self.reset_button_rect = self.reset_button.get_rect(
-            bottomleft=(0, self.WINDOW_HEIGHT))
-
-        # Create Solve button
-        self.solve_button = pygame.Surface((100, 50))
-        self.solve_button.fill(self.GRAY)
-        self.solve_button_rect = self.solve_button.get_rect(
-            bottomright=(self.WINDOW_WIDTH, self.WINDOW_HEIGHT))
-
+        self._init_buttons()
         self.cur_safe_pct, self.cur_mine_pct = 0, 0
 
     def draw_board(self, game, mines, completed):
@@ -165,7 +156,43 @@ class Visualize:
         text_rect = text.get_rect(center=self.solve_button_rect.center)
         self.screen.blit(text, text_rect)
 
+        # Draw Solve button
+        self.screen.blit(self.switch_button, self.switch_button_rect)
+        text = font.render("Switch", True, self.WHITE)
+        text_rect = text.get_rect(center=self.switch_button_rect.center)
+        self.screen.blit(text, text_rect)
+
         pygame.display.flip()
+
+    def _init_buttons(self):
+        # Create Reset button
+        self.reset_button = pygame.Surface((100, 50))
+        self.reset_button.fill(self.GRAY)
+        self.reset_button_rect = self.reset_button.get_rect(
+            bottomleft=(0, self.WINDOW_HEIGHT))
+
+        # Create Solve button
+        self.solve_button = pygame.Surface((100, 50))
+        self.solve_button.fill(self.GRAY)
+        self.solve_button_rect = self.solve_button.get_rect(
+            bottomright=(self.WINDOW_WIDTH, self.WINDOW_HEIGHT))
+
+        # Create Switch button
+        self.switch_button = pygame.Surface((100, 50))
+        self.switch_button.fill(self.GRAY)
+        self.switch_button_rect = self.switch_button.get_rect(
+            center=(self.WINDOW_WIDTH//2, self.WINDOW_HEIGHT - self.WINDOW_HEIGHT % 75))
+
+    def draw_gameover(self, win):
+        gameover_text = pygame.font.Font(None, 50).render(
+            "You Win!" if win else "Game Over!", True, self.BLACK)
+        gameover_rect = gameover_text.get_rect(
+            center=(self.WINDOW_WIDTH // 2, self.WINDOW_HEIGHT // 2))
+        pygame.draw.rect(self.screen, self.WHITE, (
+            gameover_rect.left - 10, gameover_rect.top - 10, gameover_rect.width + 20, gameover_rect.height + 20))
+        pygame.draw.rect(self.screen, self.BLACK, (
+            gameover_rect.left - 10, gameover_rect.top - 10, gameover_rect.width + 20, gameover_rect.height + 20), 5)
+        self.screen.blit(gameover_text, gameover_rect)
 
     def place_likely(self, likely_mines, likely_safe):
         for i, j in likely_mines:
@@ -178,95 +205,94 @@ class Visualize:
         # self.draw_board(self.game, self.mines, self.completed)
 
     def display(self):
-        game = self.game
-        mines = self.mines
-        completed = self.completed
-
-        self.draw_board(game, mines, completed)
-
-        # Create Reset button
-        reset_button = pygame.Surface((100, 50))
-        reset_button.fill(self.GRAY)
-        reset_button_rect = reset_button.get_rect(
-            bottomleft=(0, self.WINDOW_HEIGHT))
-
-        # Create Solve button
-        solve_button = pygame.Surface((100, 50))
-        solve_button.fill(self.GRAY)
-        solve_button_rect = solve_button.get_rect(
-            bottomright=(self.WINDOW_WIDTH, self.WINDOW_HEIGHT))
-
-        # Game loop
-        running = True
-        while running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-
-                if event.type == pygame.MOUSEBUTTONUP:
-                    pos = pygame.mouse.get_pos()
-                    col = pos[0] // self.CELL_SIZE
-                    row = pos[1] // self.CELL_SIZE
-
-                    if event.button == 1:  # left-click
-                        # Check if Reset button was clicked
-                        if self.reset_button_rect.collidepoint(pos):
-                            game = [[-1 for _ in range(BOARD_WIDTH)]
-                                    for _ in range(BOARD_HEIGHT)]
-                            mines = {(i, j): 0 for i in range(BOARD_HEIGHT)
-                                     for j in range(BOARD_WIDTH)}
-                            completed = False
-
-                        # Check if Solve button was clicked
-                        elif self.solve_button_rect.collidepoint(pos):
-                            num_sols, sols = ns.solve(game,
-                                                      blanks_no_adj=False,
-                                                      constrain_mines=True,
-                                                      limit_sols=True)
-                            ns.print_boards(sols)
-                            likely_mines, mine_pct = ns.likely_mines(sols)
-                            likely_safe, safe_pct = ns.likely_safe(sols, game)
-                            # print(likely_mines, mine_pct)
-                            # print(likely_safe, safe_pct)
-                            print("num_solutions", num_sols)
-                            self.cur_safe_pct, self.cur_mine_pct = safe_pct*100, mine_pct*100
-                            self.place_likely(likely_mines, likely_safe)
-
-                        elif row < BOARD_HEIGHT and col < BOARD_WIDTH:
-                            if game[row][col] == SAFE or game[row][col] == DEADLY or game[row][col] == CONFIRMED_FLAG:
-                                game[row][col] = -1
-                            # alternate from values -1 to 8
-                            game[row][col] = ((game[row][col] + 2) % 10) - 1
-
-                    elif event.button == 3:  # right-click
-                        if game[row][col] == SAFE or game[row][col] == DEADLY or game[row][col] == CONFIRMED_FLAG:
-                            game[row][col] = -1
-                        if game[row][col] == -1:
-                            game[row][col] = -2
-                        elif game[row][col] == -2:
-                            game[row][col] = -1
-
-            self.draw_board(game, mines, completed)
+        # Run the game loop
+        self.draw_board(self.game, self.mines, self.completed)
+        while self.running:
+            self.handle_events()
+            if not self.completed:
+                self.draw_board(self.game, self.mines, self.completed)
+            else:
+                self.draw_gameover(self.completed)
+                self.handle_events()
 
             pygame.display.flip()
 
         # Quit pygame
         pygame.quit()
 
+    def handle_events(self):
+        game = self.game
 
-def run():
-    game = [[-1 for _ in range(BOARD_WIDTH)] for _ in range(BOARD_HEIGHT)]
-    mines = {(i, j): 0 for i in range(BOARD_HEIGHT)
-             for j in range(BOARD_WIDTH)}
-    completed = False
-    v = Visualize(game, mines, completed)
-    v.display()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+
+            if event.type == pygame.MOUSEBUTTONUP:
+                pos = pygame.mouse.get_pos()
+                col = pos[0] // self.CELL_SIZE
+                row = pos[1] // self.CELL_SIZE
+
+                if event.button == 1:  # left-click
+                    # Check if Reset button was clicked
+                    if self.reset_button_rect.collidepoint(pos):
+                        self._handle_reset()
+
+                    # Check if Solve button was clicked
+                    elif self.solve_button_rect.collidepoint(pos):
+                        self._handle_solve()
+
+                    # Check if Switch button was clicked
+                    elif self.switch_button_rect.collidepoint(pos):
+                        self._handle_switch()
+
+                    elif row < BOARD_HEIGHT and col < BOARD_WIDTH:
+                        if self.switch:
+                            if game[row][col] == SAFE or game[row][col] == DEADLY or game[row][col] == CONFIRMED_FLAG:
+                                game[row][col] = -1
+                            # alternate from values -1 to 8
+                            game[row][col] = ((game[row][col] + 2) % 10) - 1
+                        else:
+                            pass
+
+                elif event.button == 3:  # right-click
+                    self._handle_right_click(game, row, col)
+
+    def _handle_reset(self):
+        if self.switch:
+            self.game = [[-1 for _ in range(BOARD_WIDTH)]
+                         for _ in range(BOARD_HEIGHT)]
+        else:
+            self.game = ns.generate_board(ns.ROWS, ns.COLS, ns.MINE_CNT)
+        self.mines = {}
+        self.completed = False
+
+    def _handle_solve(self):
+        num_sols, sols = ns.solve(self.game,
+                                  blanks_no_adj=False,
+                                  constrain_mines=True,
+                                  limit_sols=True)
+        ns.print_boards(sols)
+        likely_mines, mine_pct = ns.likely_mines(sols)
+        likely_safe, safe_pct = ns.likely_safe(sols, self.game)
+        # print(likely_mines, mine_pct)
+        # print(likely_safe, safe_pct)
+        print("num_solutions", num_sols)
+        self.cur_safe_pct, self.cur_mine_pct = safe_pct*100, mine_pct*100
+        self.place_likely(likely_mines, likely_safe)
+
+    def _handle_switch(self):
+        self.switch = not self.switch
+
+    def _handle_right_click(self, game, row, col):
+        if game[row][col] == SAFE or game[row][col] == DEADLY or game[row][col] == CONFIRMED_FLAG:
+            game[row][col] = -1
+        if game[row][col] == -1:
+            game[row][col] = -2
+        elif game[row][col] == -2:
+            game[row][col] = -1
 
 
-if __name__ == "__main__":
-    game = [[-1 for _ in range(BOARD_WIDTH)] for _ in range(BOARD_HEIGHT)]
-    mines = {(i, j): 0 for i in range(BOARD_HEIGHT)
-             for j in range(BOARD_WIDTH)}
-    completed = False
-    v = Visualize(game, mines, completed)
+def run(rows, cols, mine_count):
+    game = ns.generate_board(rows, cols, mine_count)
+    v = Visualize(game, {}, False)
     v.display()
