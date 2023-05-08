@@ -79,6 +79,28 @@ class Visualize:
         self._init_buttons()
         self.cur_safe_pct, self.cur_mine_pct = 0, 0
 
+    # # Define function to count neighboring mines
+    # def count_neighbors(self, x, y):
+    #     count = 0
+    #     for i in range(max(0, x - 1), min(x + 2, BOARD_HEIGHT)):
+    #         for j in range(max(0, y - 1), min(y + 2, BOARD_WIDTH)):
+    #             if (i, j) in self.mines:
+    #                 count += 1
+    #     return count
+
+    # # Define function to reveal cell and its neighbors
+    # def reveal(self, x, y):
+    #     if (x, y) in revealed:
+    #         return
+    #     revealed.add((x, y))
+    #     if board[x][y] == -1:
+    #         global game_over
+    #         game_over = True
+    #     elif board[x][y] == 0:
+    #         for i in range(max(0, x - 1), min(x + 2, BOARD_HEIGHT)):
+    #             for j in range(max(0, y - 1), min(y + 2, BOARD_WIDTH)):
+    #                 reveal(i, j)
+
     def draw_board(self, game, mines, completed):
         self.screen.fill(self.WHITE)
 
