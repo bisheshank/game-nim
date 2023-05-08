@@ -156,10 +156,16 @@ class Visualize:
         text_rect = text.get_rect(center=self.solve_button_rect.center)
         self.screen.blit(text, text_rect)
 
-        # Draw Solve button
-        self.screen.blit(self.switch_button, self.switch_button_rect)
-        text = font.render("Switch", True, self.WHITE)
-        text_rect = text.get_rect(center=self.switch_button_rect.center)
+        # Draw Play button
+        self.screen.blit(self.play_button, self.play_button_rect)
+        text = font.render("Play", True, self.WHITE)
+        text_rect = text.get_rect(center=self.play_button_rect.center)
+        self.screen.blit(text, text_rect)
+
+        # Draw Design button
+        self.screen.blit(self.design_button, self.design_button_rect)
+        text = font.render("Design", True, self.WHITE)
+        text_rect = text.get_rect(center=self.design_button_rect.center)
         self.screen.blit(text, text_rect)
 
         pygame.display.flip()
@@ -177,11 +183,17 @@ class Visualize:
         self.solve_button_rect = self.solve_button.get_rect(
             bottomright=(self.WINDOW_WIDTH, self.WINDOW_HEIGHT))
 
+        # Create Play button
+        self.play_button = pygame.Surface((100, 50))
+        self.play_button.fill(self.GRAY)
+        self.play_button_rect = self.play_button.get_rect(
+            bottomleft=(self.WINDOW_WIDTH * 0.4, self.WINDOW_HEIGHT))
+
         # Create Switch button
-        self.switch_button = pygame.Surface((100, 50))
-        self.switch_button.fill(self.GRAY)
-        self.switch_button_rect = self.switch_button.get_rect(
-            center=(self.WINDOW_WIDTH//2, self.WINDOW_HEIGHT - self.WINDOW_HEIGHT % 75))
+        self.design_button = pygame.Surface((100, 50))
+        self.design_button.fill(self.GRAY)
+        self.design_button_rect = self.design_button.get_rect(
+            bottomleft=(self.WINDOW_WIDTH * 0.2, self.WINDOW_HEIGHT))
 
     def draw_gameover(self, win):
         gameover_text = pygame.font.Font(None, 50).render(
@@ -242,8 +254,11 @@ class Visualize:
                         self._handle_solve()
 
                     # Check if Switch button was clicked
-                    elif self.switch_button_rect.collidepoint(pos):
-                        self._handle_switch()
+                    elif self.design_button_rect.collidepoint(pos):
+                        self.switch = True
+
+                    elif self.play_button_rect.collidepoint(pos):
+                        self.switch = False
 
                     elif row < BOARD_HEIGHT and col < BOARD_WIDTH:
                         if self.switch:
@@ -279,9 +294,6 @@ class Visualize:
         print("num_solutions", num_sols)
         self.cur_safe_pct, self.cur_mine_pct = safe_pct*100, mine_pct*100
         self.place_likely(likely_mines, likely_safe)
-
-    def _handle_switch(self):
-        self.switch = not self.switch
 
     def _handle_right_click(self, game, row, col):
         if game[row][col] == SAFE or game[row][col] == DEADLY or game[row][col] == CONFIRMED_FLAG:
