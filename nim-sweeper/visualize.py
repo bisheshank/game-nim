@@ -177,7 +177,7 @@ class Visualize:
 
         # self.draw_board(self.game, self.mines, self.completed)
 
-    def run(self):
+    def display(self):
         game = self.game
         mines = self.mines
         completed = self.completed
@@ -254,10 +254,19 @@ class Visualize:
         pygame.quit()
 
 
+def run():
+    game = [[-1 for _ in range(BOARD_WIDTH)] for _ in range(BOARD_HEIGHT)]
+    mines = {(i, j): 0 for i in range(BOARD_HEIGHT)
+             for j in range(BOARD_WIDTH)}
+    completed = False
+    v = Visualize(game, mines, completed)
+    v.display()
+
+
 if __name__ == "__main__":
     game = [[-1 for _ in range(BOARD_WIDTH)] for _ in range(BOARD_HEIGHT)]
     mines = {(i, j): 0 for i in range(BOARD_HEIGHT)
              for j in range(BOARD_WIDTH)}
     completed = False
     v = Visualize(game, mines, completed)
-    v.run()
+    v.display()
