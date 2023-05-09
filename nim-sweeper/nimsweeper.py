@@ -66,7 +66,6 @@ def generate_board(rows: int, cols: int, mine_cnt: int) -> List[List[int]]:
             if board[row][col] == MINE and not KEEP_MINES_KNOWN:
                 board[row][col] = UNKNOWN
 
-    print(board)
     return board
 
 

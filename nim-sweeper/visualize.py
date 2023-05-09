@@ -45,7 +45,7 @@ class Visualize:
         self.running = True
         self.win = False
         self.switch = False  # True for game-design mode
-        self.truth = [[-1 for _ in range(self.cols)]
+        self.truth = [[0 for _ in range(self.cols)]
                       for _ in range(self.rows)]
         self._generate_board()
 
@@ -94,7 +94,8 @@ class Visualize:
         self._init_buttons()
         self.cur_safe_pct, self.cur_mine_pct = 0, 0
 
-    def draw_board(self, game):
+    def draw_board(self):
+        game = self.game
         self.screen.fill(self.WHITE)
 
         pct_font = pygame.font.Font(None, self.CELL_SIZE // 2)
@@ -113,7 +114,7 @@ class Visualize:
                         self.screen.blit(self.mine_image,
                                          (j*self.CELL_SIZE, i*self.CELL_SIZE))
                         self.completed = True
-                    elif game[i][j] == -1 and not self.revealed[i][j]:
+                    elif game[i][j] == -1:
                         self.screen.blit(self.unknown_image,
                                          (j*self.CELL_SIZE, i*self.CELL_SIZE))
                     elif game[i][j] == -2:
@@ -151,7 +152,7 @@ class Visualize:
                         self.screen.blit(
                             self.flag_confirm_image, (j*self.CELL_SIZE, i*self.CELL_SIZE))
 
-                    elif game[i][j] == 0 or (game[i][j] == -1 and self.revealed[i][j]):
+                    elif game[i][j] == 0:
                         pass
                     else:
                         font = pygame.font.Font(None, self.CELL_SIZE)
@@ -236,11 +237,11 @@ class Visualize:
 
     def display(self):
         # Run the game loop
-        self.draw_board(self.game)
+        self.draw_board()
         while self.running:
             self.handle_events()
             if not self.completed:
-                self.draw_board(self.game)
+                self.draw_board()
             else:
                 self.draw_gameover()
                 self.handle_events()
@@ -285,7 +286,6 @@ class Visualize:
                             # alternate from values -1 to 8
                             game[row][col] = ((game[row][col] + 2) % 10) - 1
                         else:
-                            print(row, col)
                             self._handle_play(row, col)
 
                 elif event.button == 3:  # right-click
@@ -301,7 +301,7 @@ class Visualize:
         self.likely_safe = [[False for _ in range(
             self.cols)] for _ in range(self.rows)]
         self.running = True
-        self.truth = [[-1 for _ in range(self.cols)]
+        self.truth = [[0 for _ in range(self.cols)]
                       for _ in range(self.rows)]
         self._generate_board()
 
@@ -328,30 +328,15 @@ class Visualize:
             elif game[row][col] == -2:
                 game[row][col] = -1
         else:
-            # if not revealed[y][x]:
-            #         draw_cell(x, y, BACKGROUND_COLOR)
-            #         pygame.draw.polygon(screen, TEXT_COLOR, [(x*CELL_SIZE+4, y*CELL_SIZE+4), (x*CELL_SIZE+4, y*CELL_SIZE+CELL_SIZE-4), (
-            #             x*CELL_SIZE+CELL_SIZE-4, y*CELL_SIZE+CELL_SIZE//2), (x*CELL_SIZE+CELL_SIZE-4, y*CELL_SIZE+CELL_SIZE-4)])
-            #         pygame.display.flip()
-            #     else:
-            #         nearby_mines = 0
-            #         for dx in range(-1, 2):
-            #             for dy in range(-1, 2):
-            #                 if 0 <= x+dx < GRID_WIDTH and 0 <= y+dy < GRID_HEIGHT and grid[y+dy][x+dx] == -1:
-            #                     nearby_mines += 1
-            #         if nearby_mines == grid[y][x]:
-            #             for dx in range(-1, 2):
-            #                 for dy in range(-1, 2):
-            #                     if 0 <= x+dx < GRID_WIDTH and 0 <= y+dy < GRID_HEIGHT and not revealed[y+dy][x+dx]:
-            #                         reveal_cell(x+dx, y+dy)
-            #         else:
-            #             draw_cell(x, y, BACKGROUND_COLOR)
-            #             pygame.display.flip()
+            if game[row][col] == -1:
+                game[row][col] = -2
+            elif game[row][col] == -2:
+                game[row][col] = -1
             pass
 
     def _handle_play(self, x, y):
-        print("begin play", x, y, self.truth[x][y], self.revealed[x][y])
         if self.truth[x][y] == MINE:
+            self.game[x][y] = self.truth[x][y]
             self.completed = True
         else:
             self._reveal(x, y)
@@ -360,21 +345,17 @@ class Visualize:
             self.win = True
 
     def _reveal(self, x, y):
-        if (x, y) in self.mines:  # If the cell is a mine, end the game
-            return
         if self.revealed[x][y]:  # If the cell has already been revealed, do nothing
-            self.game[x][y] = self.truth[x][y]
             return
 
         self.revealed[x][y] = True
-        self.draw_board(self.game)
-        print("reveal before", x, y)
+        self.game[x][y] = self.truth[x][y]
+        self.draw_board()
 
-        if self.game[x][y] == -1:
+        if self.truth[x][y] == 0:
             for dx in range(-1, 2):  # if its unknown
                 for dy in range(-1, 2):
                     if 0 <= x+dx < self.rows and 0 <= y+dy < self.cols:
-                        print("reveal after", x, y, self.truth[x][y])
                         self._reveal(x+dx, y+dy)
 
     def _generate_board(self):
