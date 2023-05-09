@@ -41,6 +41,7 @@ def generate_board(rows: int, cols: int, mine_cnt: int) -> List[List[int]]:
     # Sample of indices for the mines
     mine_indices = random.sample([(r, c) for r in range(rows)
                                   for c in range(cols)], mine_cnt)
+    print(mine_indices)
 
     # Place the mines in the board
     for row, col in mine_indices:
@@ -65,6 +66,7 @@ def generate_board(rows: int, cols: int, mine_cnt: int) -> List[List[int]]:
             if board[row][col] == MINE and not KEEP_MINES_KNOWN:
                 board[row][col] = UNKNOWN
 
+    print(board)
     return board
 
 
@@ -196,6 +198,7 @@ def solution_board(game, mines, mod):
                 board[i][j] = MINE
             else:
                 board[i][j] = game[i][j]
+    print(mines)
     return board
 
 

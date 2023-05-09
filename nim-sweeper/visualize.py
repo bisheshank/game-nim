@@ -1,5 +1,6 @@
 import pygame
 import nimsweeper as ns
+import random
 
 # Define dimensions
 WINDOW_WIDTH = 500
@@ -19,20 +20,34 @@ NUMBER_COLORS = {
     8: (60, 60, 60)  # grey
 }
 
+UNKNOWN = -1
 SAFE = -3
 DEADLY = -4
 CONFIRMED_FLAG = -5
+MINE = -6
 
 
 class Visualize:
-    def __init__(self, game, mines, completed):
+    def __init__(self):
         # Initialize pygame
+        self.rows = ns.ROWS
+        self.cols = ns.COLS
+        self.mine_count = 7
 
-        self.game = game
-        self.mines = mines
-        self.completed = completed
+        self.game = [[-1 for _ in range(self.cols)] for _ in range(self.rows)]
+        self.completed = False
+        self.revealed = [[False for _ in range(
+            self.cols)] for _ in range(self.rows)]
+        self.likely_mines = [[False for _ in range(
+            self.cols)] for _ in range(self.rows)]
+        self.likely_safe = [[False for _ in range(
+            self.cols)] for _ in range(self.rows)]
         self.running = True
-        self.switch = True  # True for game-design mode
+        self.win = False
+        self.switch = False  # True for game-design mode
+        self.truth = [[-1 for _ in range(self.cols)]
+                      for _ in range(self.rows)]
+        self._generate_board()
 
         self.WINDOW_WIDTH = WINDOW_WIDTH
         self.WINDOW_HEIGHT = WINDOW_HEIGHT
@@ -79,29 +94,7 @@ class Visualize:
         self._init_buttons()
         self.cur_safe_pct, self.cur_mine_pct = 0, 0
 
-    # # Define function to count neighboring mines
-    # def count_neighbors(self, x, y):
-    #     count = 0
-    #     for i in range(max(0, x - 1), min(x + 2, BOARD_HEIGHT)):
-    #         for j in range(max(0, y - 1), min(y + 2, BOARD_WIDTH)):
-    #             if (i, j) in self.mines:
-    #                 count += 1
-    #     return count
-
-    # # Define function to reveal cell and its neighbors
-    # def reveal(self, x, y):
-    #     if (x, y) in revealed:
-    #         return
-    #     revealed.add((x, y))
-    #     if board[x][y] == -1:
-    #         global game_over
-    #         game_over = True
-    #     elif board[x][y] == 0:
-    #         for i in range(max(0, x - 1), min(x + 2, BOARD_HEIGHT)):
-    #             for j in range(max(0, y - 1), min(y + 2, BOARD_WIDTH)):
-    #                 reveal(i, j)
-
-    def draw_board(self, game, mines, completed):
+    def draw_board(self, game):
         self.screen.fill(self.WHITE)
 
         pct_font = pygame.font.Font(None, self.CELL_SIZE // 2)
@@ -112,12 +105,15 @@ class Visualize:
                                                           i*self.CELL_SIZE, self.CELL_SIZE, self.CELL_SIZE))
 
                 # Draw the cell contents
-                if completed and mines[(i, j)] == 1:
+                if self.completed and self.truth[i][j] == MINE:
                     self.screen.blit(
                         self.mine_image, (j*self.CELL_SIZE, i*self.CELL_SIZE))
                 else:
-
-                    if game[i][j] == -1:
+                    if game[i][j] == MINE:
+                        self.screen.blit(self.mine_image,
+                                         (j*self.CELL_SIZE, i*self.CELL_SIZE))
+                        self.completed = True
+                    elif game[i][j] == -1 and not self.revealed[i][j]:
                         self.screen.blit(self.unknown_image,
                                          (j*self.CELL_SIZE, i*self.CELL_SIZE))
                     elif game[i][j] == -2:
@@ -155,7 +151,7 @@ class Visualize:
                         self.screen.blit(
                             self.flag_confirm_image, (j*self.CELL_SIZE, i*self.CELL_SIZE))
 
-                    elif game[i][j] == 0:
+                    elif game[i][j] == 0 or (game[i][j] == -1 and self.revealed[i][j]):
                         pass
                     else:
                         font = pygame.font.Font(None, self.CELL_SIZE)
@@ -217,9 +213,9 @@ class Visualize:
         self.design_button_rect = self.design_button.get_rect(
             bottomleft=(self.WINDOW_WIDTH * 0.2, self.WINDOW_HEIGHT))
 
-    def draw_gameover(self, win):
+    def draw_gameover(self):
         gameover_text = pygame.font.Font(None, 50).render(
-            "You Win!" if win else "Game Over!", True, self.BLACK)
+            "You Win!" if self.win else "Game Over!", True, self.BLACK)
         gameover_rect = gameover_text.get_rect(
             center=(self.WINDOW_WIDTH // 2, self.WINDOW_HEIGHT // 2))
         pygame.draw.rect(self.screen, self.WHITE, (
@@ -240,13 +236,13 @@ class Visualize:
 
     def display(self):
         # Run the game loop
-        self.draw_board(self.game, self.mines, self.completed)
+        self.draw_board(self.game)
         while self.running:
             self.handle_events()
             if not self.completed:
-                self.draw_board(self.game, self.mines, self.completed)
+                self.draw_board(self.game)
             else:
-                self.draw_gameover(self.completed)
+                self.draw_gameover()
                 self.handle_events()
 
             pygame.display.flip()
@@ -282,26 +278,32 @@ class Visualize:
                     elif self.play_button_rect.collidepoint(pos):
                         self.switch = False
 
-                    elif row < BOARD_HEIGHT and col < BOARD_WIDTH:
+                    elif row < BOARD_HEIGHT and col < BOARD_WIDTH and not self.completed:
                         if self.switch:
                             if game[row][col] == SAFE or game[row][col] == DEADLY or game[row][col] == CONFIRMED_FLAG:
-                                game[row][col] = -1
+                                game[row][col] = UNKNOWN
                             # alternate from values -1 to 8
                             game[row][col] = ((game[row][col] + 2) % 10) - 1
                         else:
-                            pass
+                            print(row, col)
+                            self._handle_play(row, col)
 
                 elif event.button == 3:  # right-click
                     self._handle_right_click(game, row, col)
 
     def _handle_reset(self):
-        if self.switch:
-            self.game = [[-1 for _ in range(BOARD_WIDTH)]
-                         for _ in range(BOARD_HEIGHT)]
-        else:
-            self.game = ns.generate_board(ns.ROWS, ns.COLS, ns.MINE_CNT)
-        self.mines = {}
+        self.game = [[-1 for _ in range(self.cols)] for _ in range(self.rows)]
         self.completed = False
+        self.revealed = [[False for _ in range(
+            self.cols)] for _ in range(self.rows)]
+        self.likely_mines = [[False for _ in range(
+            self.cols)] for _ in range(self.rows)]
+        self.likely_safe = [[False for _ in range(
+            self.cols)] for _ in range(self.rows)]
+        self.running = True
+        self.truth = [[-1 for _ in range(self.cols)]
+                      for _ in range(self.rows)]
+        self._generate_board()
 
     def _handle_solve(self):
         num_sols, sols = ns.solve(self.game,
@@ -318,15 +320,83 @@ class Visualize:
         self.place_likely(likely_mines, likely_safe)
 
     def _handle_right_click(self, game, row, col):
-        if game[row][col] == SAFE or game[row][col] == DEADLY or game[row][col] == CONFIRMED_FLAG:
-            game[row][col] = -1
-        if game[row][col] == -1:
-            game[row][col] = -2
-        elif game[row][col] == -2:
-            game[row][col] = -1
+        if self.switch:  # I DONT UNDERSTAND THIS ONE
+            if game[row][col] == SAFE or game[row][col] == DEADLY or game[row][col] == CONFIRMED_FLAG:
+                game[row][col] = -1
+            if game[row][col] == -1:
+                game[row][col] = -2
+            elif game[row][col] == -2:
+                game[row][col] = -1
+        else:
+            # if not revealed[y][x]:
+            #         draw_cell(x, y, BACKGROUND_COLOR)
+            #         pygame.draw.polygon(screen, TEXT_COLOR, [(x*CELL_SIZE+4, y*CELL_SIZE+4), (x*CELL_SIZE+4, y*CELL_SIZE+CELL_SIZE-4), (
+            #             x*CELL_SIZE+CELL_SIZE-4, y*CELL_SIZE+CELL_SIZE//2), (x*CELL_SIZE+CELL_SIZE-4, y*CELL_SIZE+CELL_SIZE-4)])
+            #         pygame.display.flip()
+            #     else:
+            #         nearby_mines = 0
+            #         for dx in range(-1, 2):
+            #             for dy in range(-1, 2):
+            #                 if 0 <= x+dx < GRID_WIDTH and 0 <= y+dy < GRID_HEIGHT and grid[y+dy][x+dx] == -1:
+            #                     nearby_mines += 1
+            #         if nearby_mines == grid[y][x]:
+            #             for dx in range(-1, 2):
+            #                 for dy in range(-1, 2):
+            #                     if 0 <= x+dx < GRID_WIDTH and 0 <= y+dy < GRID_HEIGHT and not revealed[y+dy][x+dx]:
+            #                         reveal_cell(x+dx, y+dy)
+            #         else:
+            #             draw_cell(x, y, BACKGROUND_COLOR)
+            #             pygame.display.flip()
+            pass
+
+    def _handle_play(self, x, y):
+        print("begin play", x, y, self.truth[x][y], self.revealed[x][y])
+        if self.truth[x][y] == MINE:
+            self.completed = True
+        else:
+            self._reveal(x, y)
+        if all(all(row) for row in self.revealed):
+            self.completed = True
+            self.win = True
+
+    def _reveal(self, x, y):
+        if (x, y) in self.mines:  # If the cell is a mine, end the game
+            return
+        if self.revealed[x][y]:  # If the cell has already been revealed, do nothing
+            self.game[x][y] = self.truth[x][y]
+            return
+
+        self.revealed[x][y] = True
+        self.draw_board(self.game)
+        print("reveal before", x, y)
+
+        if self.game[x][y] == -1:
+            for dx in range(-1, 2):  # if its unknown
+                for dy in range(-1, 2):
+                    if 0 <= x+dx < self.rows and 0 <= y+dy < self.cols:
+                        print("reveal after", x, y, self.truth[x][y])
+                        self._reveal(x+dx, y+dy)
+
+    def _generate_board(self):
+        self.mines = []
+        while len(self.mines) < self.mine_count:
+            x, y = random.randint(
+                0, self.rows-1), random.randint(0, self.cols-1)
+            if self.truth[x][y] != MINE:
+                self.truth[x][y] = MINE
+                self.mines.append((x, y))
+                # increment cell values for adjacent cells
+                for dx in range(-1, 2):
+                    for dy in range(-1, 2):
+                        if 0 <= x+dx < self.rows and 0 <= y+dy < self.cols and self.truth[x+dx][y+dy] != MINE:
+                            self.truth[x+dx][y+dy] += 1
 
 
-def run(rows, cols, mine_count):
-    game = ns.generate_board(rows, cols, mine_count)
-    v = Visualize(game, {}, False)
+def run():
+    v = Visualize()
     v.display()
+
+
+if __name__ == "__main__":
+    v = Visualize([[0 for _ in range(ns.COLS)] for _ in range(ns.ROWS)])
+    v._generate_board()
