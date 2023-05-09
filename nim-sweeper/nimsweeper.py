@@ -246,18 +246,17 @@ def print_board(
 def run(rows=ROWS, cols=COLS, mine_cnt=MINE_CNT, v=VERBOSE):
     board = generate_board(rows, cols, mine_cnt)
     print_board(board)
-    num_sols, sols = solve(board, mine_cnt)
+    num_sols, sols = solve(board, mine_cnt, blanks_no_adj=v)
 
-    if v:
-        print("Solution(s):")
-        print_boards(sols)
+    print("Solution(s):")
+    print_boards(sols)
 
 
-if __name__ == "__main__":
-    board = generate_board(ROWS, COLS, mine_cnt=MINE_CNT)
-    print_board(board)
-    num_sols, sols = solve(board, mine_cnt=MINE_CNT)
+# if __name__ == "__main__":
+#     board = generate_board(ROWS, COLS, mine_cnt=MINE_CNT)
+#     print_board(board)
+#     num_sols, sols = solve(board, mine_cnt=MINE_CNT)
 
-    if VERBOSE:
-        print("Solution(s):")
-        print_boards(sols)
+#     if VERBOSE:
+#         print("Solution(s):")
+#         print_boards(sols)
