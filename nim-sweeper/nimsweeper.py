@@ -197,7 +197,6 @@ def solution_board(game, mines, mod):
                 board[i][j] = MINE
             else:
                 board[i][j] = game[i][j]
-    print(mines)
     return board
 
 

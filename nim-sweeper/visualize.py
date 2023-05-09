@@ -120,34 +120,6 @@ class Visualize:
                     elif game[i][j] == -2:
                         self.screen.blit(
                             self.flag_image, (j*self.CELL_SIZE, i*self.CELL_SIZE))
-                    elif game[i][j] == SAFE:
-                        self.screen.blit(
-                            self.safe_image, (j*self.CELL_SIZE, i*self.CELL_SIZE))
-                        # TODO: add text for percent likelihood of being safe (cur_safe_pct if nonzero)
-                        if self.cur_safe_pct > 0:
-                            color = (0, 0, 0)
-                            if self.cur_safe_pct == 100:
-                                self.cur_mine_pct = 99  # due to non-full sampling, can't be 100% safe
-                                color = (255, 0, 0)
-                            text_surface = pct_font.render(
-                                "{:.0f}%".format(self.cur_safe_pct), True, color)
-                            text_rect = text_surface.get_rect(center=(
-                                j*self.CELL_SIZE+self.CELL_SIZE//2, i*self.CELL_SIZE+int(self.CELL_SIZE*3/4)))
-                            self.screen.blit(text_surface, text_rect)
-                    elif game[i][j] == DEADLY:
-                        self.screen.blit(
-                            self.deadly_image, (j*self.CELL_SIZE, i*self.CELL_SIZE))
-                        # TODO: add text for percent likelihood of being a mine (cur_mine_pct if nonzero)
-                        if self.cur_mine_pct > 0:
-                            color = (0, 0, 0)
-                            if self.cur_mine_pct == 100:
-                                self.cur_mine_pct = 99  # due to non-full sampling, can't be 100% safe
-                                color = (255, 0, 0)
-                            text_surface = pct_font.render(
-                                "{:.0f}%".format(self.cur_mine_pct), True, color)
-                            text_rect = text_surface.get_rect(center=(
-                                j*self.CELL_SIZE+self.CELL_SIZE//2, i*self.CELL_SIZE+int(self.CELL_SIZE*3/4)))
-                            self.screen.blit(text_surface, text_rect)
                     elif game[i][j] == CONFIRMED_FLAG:
                         self.screen.blit(
                             self.flag_confirm_image, (j*self.CELL_SIZE, i*self.CELL_SIZE))
@@ -161,6 +133,38 @@ class Visualize:
                         text_rect = text.get_rect(
                             center=(j*self.CELL_SIZE+self.CELL_SIZE/2, i*self.CELL_SIZE+self.CELL_SIZE/2))
                         self.screen.blit(text, text_rect)
+
+                    if self.likely_safe[i][j]:
+                        self.screen.blit(
+                            self.safe_image, (j*self.CELL_SIZE, i*self.CELL_SIZE))
+                        # TODO: add text for percent likelihood of being safe (cur_safe_pct if nonzero)
+                        if self.cur_safe_pct > 0:
+                            color = (0, 0, 0)
+                            if self.cur_safe_pct == 100:
+                                self.cur_mine_pct = 99  # due to non-full sampling, can't be 100% safe
+                                color = (255, 0, 0)
+                            text_surface = pct_font.render(
+                                "{:.0f}%".format(self.cur_safe_pct), True, color)
+                            text_rect = text_surface.get_rect(center=(
+                                j*self.CELL_SIZE+self.CELL_SIZE//2, i*self.CELL_SIZE+int(self.CELL_SIZE*3/4)))
+                            self.screen.blit(text_surface, text_rect)
+                    if self.likely_mines[i][j]:
+                        self.screen.blit(
+                            self.deadly_image, (j*self.CELL_SIZE, i*self.CELL_SIZE))
+                        # TODO: add text for percent likelihood of being a mine (cur_mine_pct if nonzero)
+                        if self.cur_mine_pct > 0:
+                            color = (0, 0, 0)
+                            if self.cur_mine_pct == 100:
+                                self.cur_mine_pct = 99  # due to non-full sampling, can't be 100% safe
+                                color = (255, 0, 0)
+                            text_surface = pct_font.render(
+                                "{:.0f}%".format(self.cur_mine_pct), True, color)
+                            text_rect = text_surface.get_rect(center=(
+                                j*self.CELL_SIZE+self.CELL_SIZE//2, i*self.CELL_SIZE+int(self.CELL_SIZE*3/4)))
+                            self.screen.blit(text_surface, text_rect)
+
+            if self.completed:
+                self.draw_gameover()
 
         # Draw Reset button
         self.screen.blit(self.reset_button, self.reset_button_rect)
@@ -226,14 +230,20 @@ class Visualize:
         self.screen.blit(gameover_text, gameover_rect)
 
     def place_likely(self, likely_mines, likely_safe):
+        # for i, j in likely_mines:
+        #     self.game[i][j] = DEADLY if self.game[i][j] != - \
+        #         2 and self.game[i][j] != CONFIRMED_FLAG else CONFIRMED_FLAG
+
+        # for i, j in likely_safe:
+        #     self.game[i][j] = SAFE
+        # self.draw_board(self.game, self.mines, self.completed)
+
         for i, j in likely_mines:
-            self.game[i][j] = DEADLY if self.game[i][j] != - \
+            self.likely_mines[i][j] = True if self.game[i][j] != - \
                 2 and self.game[i][j] != CONFIRMED_FLAG else CONFIRMED_FLAG
 
         for i, j in likely_safe:
-            self.game[i][j] = SAFE
-
-        # self.draw_board(self.game, self.mines, self.completed)
+            self.likely_safe[i][j] = True
 
     def display(self):
         # Run the game loop
@@ -243,7 +253,7 @@ class Visualize:
             if not self.completed:
                 self.draw_board()
             else:
-                self.draw_gameover()
+                self.draw_board()
                 self.handle_events()
 
             pygame.display.flip()
