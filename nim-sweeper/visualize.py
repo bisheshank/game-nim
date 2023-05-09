@@ -26,11 +26,11 @@ MINE = -4
 
 
 class Visualize:
-    def __init__(self):
+    def __init__(self, mine_count):
         # Initialize pygame
         self.rows = ns.ROWS
         self.cols = ns.COLS
-        self.mine_count = 7
+        self.mine_count = mine_count
 
         self.game = [[-1 for _ in range(self.cols)] for _ in range(self.rows)]
         self.completed = False
@@ -393,11 +393,6 @@ class Visualize:
                             self.truth[x+dx][y+dy] += 1
 
 
-def run():
-    v = Visualize()
+def run(mine_count):
+    v = Visualize(mine_count)
     v.display()
-
-
-if __name__ == "__main__":
-    v = Visualize([[0 for _ in range(ns.COLS)] for _ in range(ns.ROWS)])
-    v._generate_board()

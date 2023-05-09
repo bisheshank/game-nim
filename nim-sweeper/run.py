@@ -33,4 +33,4 @@ if __name__ == "__main__":
     else:
         # TODO
         print("visualize")
-        vz.run()
+        vz.run(mine_count)
