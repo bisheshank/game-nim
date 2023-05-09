@@ -20,11 +20,11 @@ NUMBER_COLORS = {
     8: (60, 60, 60)  # grey
 }
 
+SAFE = 0
 UNKNOWN = -1
-SAFE = -3
-DEADLY = -4
-CONFIRMED_FLAG = -5
-MINE = -6
+FLAG = -2
+CONFIRMED_FLAG = -3
+MINE = -4
 
 
 class Visualize:
@@ -114,17 +114,16 @@ class Visualize:
                         self.screen.blit(self.mine_image,
                                          (j*self.CELL_SIZE, i*self.CELL_SIZE))
                         self.completed = True
-                    elif game[i][j] == -1:
+                    elif game[i][j] == UNKNOWN:
                         self.screen.blit(self.unknown_image,
                                          (j*self.CELL_SIZE, i*self.CELL_SIZE))
-                    elif game[i][j] == -2:
+                    elif game[i][j] == FLAG:
                         self.screen.blit(
                             self.flag_image, (j*self.CELL_SIZE, i*self.CELL_SIZE))
                     elif game[i][j] == CONFIRMED_FLAG:
                         self.screen.blit(
                             self.flag_confirm_image, (j*self.CELL_SIZE, i*self.CELL_SIZE))
-
-                    elif game[i][j] == 0:
+                    elif game[i][j] == SAFE:
                         pass
                     else:
                         font = pygame.font.Font(None, self.CELL_SIZE)
@@ -140,8 +139,7 @@ class Visualize:
                         # TODO: add text for percent likelihood of being safe (cur_safe_pct if nonzero)
                         if self.cur_safe_pct > 0:
                             color = (0, 0, 0)
-                            if self.cur_safe_pct == 100:
-                                self.cur_mine_pct = 99  # due to non-full sampling, can't be 100% safe
+                            if self.cur_safe_pct < 100:
                                 color = (255, 0, 0)
                             text_surface = pct_font.render(
                                 "{:.0f}%".format(self.cur_safe_pct), True, color)
@@ -154,8 +152,7 @@ class Visualize:
                         # TODO: add text for percent likelihood of being a mine (cur_mine_pct if nonzero)
                         if self.cur_mine_pct > 0:
                             color = (0, 0, 0)
-                            if self.cur_mine_pct == 100:
-                                self.cur_mine_pct = 99  # due to non-full sampling, can't be 100% safe
+                            if self.cur_mine_pct < 100:
                                 color = (255, 0, 0)
                             text_surface = pct_font.render(
                                 "{:.0f}%".format(self.cur_mine_pct), True, color)
@@ -210,7 +207,7 @@ class Visualize:
         self.play_button = pygame.Surface((100, 50))
         self.play_button.fill(self.GRAY)
         self.play_button_rect = self.play_button.get_rect(
-            bottomleft=(self.WINDOW_WIDTH * 0.4, self.WINDOW_HEIGHT))
+            bottomleft=(self.WINDOW_WIDTH * 0.6, self.WINDOW_HEIGHT))
 
         # Create Switch button
         self.design_button = pygame.Surface((100, 50))
@@ -291,7 +288,7 @@ class Visualize:
 
                     elif row < BOARD_HEIGHT and col < BOARD_WIDTH and not self.completed:
                         if self.switch:
-                            if game[row][col] == SAFE or game[row][col] == DEADLY or game[row][col] == CONFIRMED_FLAG:
+                            if game[row][col] == CONFIRMED_FLAG:
                                 game[row][col] = UNKNOWN
                             # alternate from values -1 to 8
                             game[row][col] = ((game[row][col] + 2) % 10) - 1
@@ -323,25 +320,25 @@ class Visualize:
         ns.print_boards(sols)
         likely_mines, mine_pct = ns.likely_mines(sols)
         likely_safe, safe_pct = ns.likely_safe(sols, self.game)
-        # print(likely_mines, mine_pct)
-        # print(likely_safe, safe_pct)
         print("num_solutions", num_sols)
-        self.cur_safe_pct, self.cur_mine_pct = safe_pct*100, mine_pct*100
+        # due to non-full sampling, can't be 100% safe
+        self.cur_mine_pct = mine_pct*100 if num_sols >= ns.LIMIT_SOL_SPACE else mine_pct*99
+        self.cur_safe_pct = safe_pct*100
         self.place_likely(likely_mines, likely_safe)
 
     def _handle_right_click(self, game, row, col):
         if self.switch:  # I DONT UNDERSTAND THIS ONE
-            if game[row][col] == SAFE or game[row][col] == DEADLY or game[row][col] == CONFIRMED_FLAG:
-                game[row][col] = -1
-            if game[row][col] == -1:
-                game[row][col] = -2
-            elif game[row][col] == -2:
-                game[row][col] = -1
+            if game[row][col] == CONFIRMED_FLAG:
+                game[row][col] = UNKNOWN
+            elif game[row][col] == UNKNOWN:
+                game[row][col] = FLAG
+            elif game[row][col] == FLAG:
+                game[row][col] = UNKNOWN
         else:
-            if game[row][col] == -1:
-                game[row][col] = -2
-            elif game[row][col] == -2:
-                game[row][col] = -1
+            if game[row][col] == UNKNOWN:
+                game[row][col] = FLAG
+            elif game[row][col] == FLAG:
+                game[row][col] = UNKNOWN
             pass
 
     def _handle_play(self, x, y):
@@ -362,7 +359,7 @@ class Visualize:
         self.game[x][y] = self.truth[x][y]
         self.draw_board()
 
-        if self.truth[x][y] == 0:
+        if self.truth[x][y] == SAFE:
             for dx in range(-1, 2):  # if its unknown
                 for dy in range(-1, 2):
                     if 0 <= x+dx < self.rows and 0 <= y+dy < self.cols:
