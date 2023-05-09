@@ -22,8 +22,6 @@ NUMBER_COLORS = {
 
 SAFE = 0
 UNKNOWN = -1
-FLAG = -2
-CONFIRMED_FLAG = -3
 MINE = -4
 
 
@@ -42,6 +40,10 @@ class Visualize:
             self.cols)] for _ in range(self.rows)]
         self.likely_safe = [[False for _ in range(
             self.cols)] for _ in range(self.rows)]
+        self.flags = [[False for _ in range(
+            self.cols)] for _ in range(self.rows)]
+        self.confirmed_flags = [
+            [False for _ in range(self.cols)] for _ in range(self.rows)]
         self.running = True
         self.win = False
         self.switch = False  # True for game-design mode
@@ -117,12 +119,6 @@ class Visualize:
                     elif game[i][j] == UNKNOWN:
                         self.screen.blit(self.unknown_image,
                                          (j*self.CELL_SIZE, i*self.CELL_SIZE))
-                    elif game[i][j] == FLAG:
-                        self.screen.blit(
-                            self.flag_image, (j*self.CELL_SIZE, i*self.CELL_SIZE))
-                    elif game[i][j] == CONFIRMED_FLAG:
-                        self.screen.blit(
-                            self.flag_confirm_image, (j*self.CELL_SIZE, i*self.CELL_SIZE))
                     elif game[i][j] == SAFE:
                         pass
                     else:
@@ -159,6 +155,15 @@ class Visualize:
                             text_rect = text_surface.get_rect(center=(
                                 j*self.CELL_SIZE+self.CELL_SIZE//2, i*self.CELL_SIZE+int(self.CELL_SIZE*3/4)))
                             self.screen.blit(text_surface, text_rect)
+
+                    if self.flags[i][j]:
+                        self.screen.blit(
+                            self.flag_image, (j*self.CELL_SIZE, i*self.CELL_SIZE))
+                    elif self.confirmed_flags[i][j]:
+                        self.screen.blit(
+                            self.flag_confirm_image, (j*self.CELL_SIZE, i*self.CELL_SIZE))
+                    else:
+                        pass
 
             if self.completed:
                 self.draw_gameover()
@@ -236,8 +241,11 @@ class Visualize:
         # self.draw_board(self.game, self.mines, self.completed)
 
         for i, j in likely_mines:
-            self.likely_mines[i][j] = True if self.game[i][j] != - \
-                2 and self.game[i][j] != CONFIRMED_FLAG else CONFIRMED_FLAG
+            if not self.flags[i][j] and not self.confirmed_flags[i][j]:
+                self.likely_mines[i][j] = True
+            else:
+                self.flags[i][j] = False
+                self.confirmed_flags[i][j] = True
 
         for i, j in likely_safe:
             self.likely_safe[i][j] = True
@@ -288,12 +296,17 @@ class Visualize:
 
                     elif row < BOARD_HEIGHT and col < BOARD_WIDTH and not self.completed:
                         if self.switch:
-                            if game[row][col] == CONFIRMED_FLAG:
-                                game[row][col] = UNKNOWN
+                            if self.confirmed_flags[row][col]:
+                                self.confirmed_flags[row][col] = False
                             # alternate from values -1 to 8
                             game[row][col] = ((game[row][col] + 2) % 10) - 1
                         else:
-                            self._handle_play(row, col)
+                            if not self.confirmed_flags[row][col]:
+                                if self.likely_safe[row][col]:
+                                    self.likely_safe[row][col] = False
+                                self._handle_play(row, col)
+                            else:
+                                pass
 
                 elif event.button == 3:  # right-click
                     self._handle_right_click(game, row, col)
@@ -310,6 +323,10 @@ class Visualize:
         self.running = True
         self.truth = [[0 for _ in range(self.cols)]
                       for _ in range(self.rows)]
+        self.flags = [[False for _ in range(
+            self.cols)] for _ in range(self.rows)]
+        self.confirmed_flags = [
+            [False for _ in range(self.cols)] for _ in range(self.rows)]
         self._generate_board()
 
     def _handle_solve(self):
@@ -327,19 +344,15 @@ class Visualize:
         self.place_likely(likely_mines, likely_safe)
 
     def _handle_right_click(self, game, row, col):
-        if self.switch:  # I DONT UNDERSTAND THIS ONE
-            if game[row][col] == CONFIRMED_FLAG:
-                game[row][col] = UNKNOWN
-            elif game[row][col] == UNKNOWN:
-                game[row][col] = FLAG
-            elif game[row][col] == FLAG:
-                game[row][col] = UNKNOWN
-        else:
-            if game[row][col] == UNKNOWN:
-                game[row][col] = FLAG
-            elif game[row][col] == FLAG:
-                game[row][col] = UNKNOWN
-            pass
+        if self.switch:
+            if self.confirmed_flags[row][col]:
+                self.confirmed_flags[row][col] = False
+
+        if self.flags[row][col]:
+            self.flags[row][col] = False
+        elif game[row][col] == UNKNOWN:
+            self.flags[row][col] = True
+        self.draw_board()
 
     def _handle_play(self, x, y):
         if self.truth[x][y] == MINE:
