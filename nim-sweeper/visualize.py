@@ -298,6 +298,10 @@ class Visualize:
                         if self.switch:
                             if self.confirmed_flags[row][col]:
                                 self.confirmed_flags[row][col] = False
+                            if self.likely_mines[row][col]:
+                                self.likely_mines[row][col] = False
+                            if self.likely_safe[row][col]:
+                                self.likely_safe[row][col] = False
                             # alternate from values -1 to 8
                             game[row][col] = ((game[row][col] + 2) % 10) - 1
                         else:
