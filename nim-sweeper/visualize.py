@@ -255,10 +255,11 @@ class Visualize:
         # Run the game loop
         self.draw_board()
         while self.running:
-            self.check_completed()
             self.handle_events()
             if not self.completed:
                 self.draw_board()
+                if not self.switch:
+                    self.check_completed()
             else:
                 self.draw_board()
                 self.handle_events()
@@ -332,6 +333,7 @@ class Visualize:
     def _handle_reset(self):
         self.game = [[-1 for _ in range(self.cols)] for _ in range(self.rows)]
         self.completed = False
+        self.win = False
         self.revealed = [[False for _ in range(
             self.cols)] for _ in range(self.rows)]
         self.likely_mines = [[False for _ in range(
@@ -345,7 +347,11 @@ class Visualize:
             self.cols)] for _ in range(self.rows)]
         self.confirmed_flags = [
             [False for _ in range(self.cols)] for _ in range(self.rows)]
-        self._generate_board()
+        if not self.switch:
+            self._generate_board()
+        else:
+            self.truth = [[0 for _ in range(self.BOARD_WIDTH)]
+                          for _ in range(self.BOARD_HEIGHT)]
 
     def _handle_solve(self):
         num_sols, sols = ns.solve(self.game,
