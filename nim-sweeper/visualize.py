@@ -49,6 +49,7 @@ class Visualize:
         self.switch = False  # True for game-design mode
         self.truth = [[0 for _ in range(self.cols)]
                       for _ in range(self.rows)]
+
         self._generate_board()
 
         self.WINDOW_WIDTH = WINDOW_WIDTH
@@ -243,9 +244,9 @@ class Visualize:
         for i, j in likely_mines:
             if not self.flags[i][j] and not self.confirmed_flags[i][j]:
                 self.likely_mines[i][j] = True
-            else:
-                self.flags[i][j] = False
-                self.confirmed_flags[i][j] = True
+            # else:
+            #     self.flags[i][j] = False
+            #     self.confirmed_flags[i][j] = True
 
         for i, j in likely_safe:
             self.likely_safe[i][j] = True
@@ -254,6 +255,7 @@ class Visualize:
         # Run the game loop
         self.draw_board()
         while self.running:
+            self.check_completed()
             self.handle_events()
             if not self.completed:
                 self.draw_board()
@@ -265,6 +267,18 @@ class Visualize:
 
         # Quit pygame
         pygame.quit()
+
+    def check_completed(self):
+        win = True
+        for i in range(self.BOARD_HEIGHT):
+            for j in range(self.BOARD_WIDTH):
+                if self.truth[i][j] == MINE:
+                    win = win and (self.flags[i][j]
+                                   or self.confirmed_flags[i][j])
+
+        if win:
+            self.win = win
+            self.completed = True
 
     def handle_events(self):
         game = self.game
